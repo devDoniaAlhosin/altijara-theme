@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ALTIJARA_THEME_VERSION', '2.2.2' );
+define( 'ALTIJARA_THEME_VERSION', '2.2.3' );
 define( 'ALTIJARA_THEME_DIR', get_template_directory() );
 define( 'ALTIJARA_THEME_URI', get_template_directory_uri() );
 if ( ! defined( 'ALTIJARA_OPTION_KEY' ) ) {

@@ -360,13 +360,27 @@ function altijara_render_settings_page() {
 		}
 	}
 
-	$opts   = altijara_get_options();
-	$header = is_array( $opts['header'] ?? null ) ? $opts['header'] : array();
-	$footer = is_array( $opts['footer'] ?? null ) ? $opts['footer'] : array();
-	$social = ( is_array( $opts['social'] ?? null ) && ! empty( $opts['social']['items'] ) && is_array( $opts['social']['items'] ) )
-		? $opts['social']['items']
-		: ( altijara_default_options()['social']['items'] ?? array() );
-	$map    = is_array( $opts['category_map'] ?? null ) ? $opts['category_map'] : array();
+	$opts    = altijara_get_options();
+	$defs    = altijara_default_options();
+	$header  = is_array( $opts['header'] ?? null ) ? $opts['header'] : ( $defs['header'] ?? array() );
+	$footer  = is_array( $opts['footer'] ?? null ) ? $opts['footer'] : ( $defs['footer'] ?? array() );
+	$general = is_array( $opts['general'] ?? null ) ? $opts['general'] : ( $defs['general'] ?? array() );
+	$article = is_array( $opts['article'] ?? null ) ? $opts['article'] : ( $defs['article'] ?? array() );
+	$magazine = is_array( $opts['magazine'] ?? null ) ? $opts['magazine'] : ( $defs['magazine'] ?? array() );
+	$advertising = is_array( $opts['advertising'] ?? null ) ? $opts['advertising'] : ( $defs['advertising'] ?? array() );
+	$social_items = array();
+	if ( is_array( $opts['social'] ?? null ) && ! empty( $opts['social']['items'] ) && is_array( $opts['social']['items'] ) ) {
+		foreach ( $opts['social']['items'] as $row ) {
+			if ( is_array( $row ) ) {
+				$social_items[] = $row;
+			}
+		}
+	}
+	if ( empty( $social_items ) ) {
+		$social_items = $defs['social']['items'] ?? array();
+	}
+	$social = $social_items;
+	$map    = is_array( $opts['category_map'] ?? null ) ? $opts['category_map'] : ( $defs['category_map'] ?? array() );
 	?>
 	<div class="wrap" dir="rtl">
 		<h1><?php esc_html_e( 'Altijara Theme — إعدادات القالب', 'altijara' ); ?></h1>
@@ -390,7 +404,7 @@ function altijara_render_settings_page() {
 				<table class="form-table">
 					<tr>
 						<th><label for="site_tagline_ar"><?php esc_html_e( 'الشعار النصي', 'altijara' ); ?></label></th>
-						<td><input class="regular-text" type="text" id="site_tagline_ar" name="altijara_general[site_tagline_ar]" value="<?php echo esc_attr( $opts['general']['site_tagline_ar'] ?? '' ); ?>"></td>
+						<td><input class="regular-text" type="text" id="site_tagline_ar" name="altijara_general[site_tagline_ar]" value="<?php echo esc_attr( $general['site_tagline_ar'] ?? '' ); ?>"></td>
 					</tr>
 				</table>
 				<h2><?php esc_html_e( 'خريطة التصنيفات', 'altijara' ); ?></h2>
@@ -408,6 +422,9 @@ function altijara_render_settings_page() {
 
 			<?php elseif ( 'design' === $active ) : ?>
 				<?php
+				if ( ! function_exists( 'altijara_default_design' ) || ! function_exists( 'altijara_font_main_presets' ) ) {
+					echo '<div class="notice notice-error"><p>' . esc_html__( 'ملف المظهر (design.php) غير محمّل. أعد رفع مجلد القالب بالكامل.', 'altijara' ) . '</p></div>';
+				} else {
 				$design = is_array( $opts['design'] ?? null ) ? array_merge( altijara_default_design(), $opts['design'] ) : altijara_default_design();
 				$main_presets  = altijara_font_main_presets();
 				$serif_presets = altijara_font_serif_presets();
@@ -498,6 +515,7 @@ function altijara_render_settings_page() {
 					});
 				})();
 				</script>
+				<?php } ?>
 
 			<?php elseif ( 'header' === $active ) : ?>
 				<table class="form-table">
@@ -708,9 +726,9 @@ function altijara_render_settings_page() {
 					<tr>
 						<th><?php esc_html_e( 'مقالات ذات صلة', 'altijara' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="altijara_article[show_related]" value="1" <?php checked( ! empty( $opts['article']['show_related'] ) ); ?>> <?php esc_html_e( 'إظهار', 'altijara' ); ?></label>
+							<label><input type="checkbox" name="altijara_article[show_related]" value="1" <?php checked( ! empty( $article['show_related'] ) ); ?>> <?php esc_html_e( 'إظهار', 'altijara' ); ?></label>
 							<label style="margin-inline-start:12px;"><?php esc_html_e( 'العدد', 'altijara' ); ?>
-								<input type="number" min="1" max="12" name="altijara_article[related_count]" value="<?php echo esc_attr( (string) (int) ( $opts['article']['related_count'] ?? 2 ) ); ?>" style="width:70px">
+								<input type="number" min="1" max="12" name="altijara_article[related_count]" value="<?php echo esc_attr( (string) (int) ( $article['related_count'] ?? 2 ) ); ?>" style="width:70px">
 							</label>
 						</td>
 					</tr>
@@ -721,7 +739,7 @@ function altijara_render_settings_page() {
 				<table class="form-table">
 					<tr>
 						<th><?php esc_html_e( 'أساس FlipHTML5', 'altijara' ); ?></th>
-						<td><input class="regular-text" type="url" name="altijara_magazine[flip_base]" value="<?php echo esc_attr( $opts['magazine']['flip_base'] ?? '' ); ?>"></td>
+						<td><input class="regular-text" type="url" name="altijara_magazine[flip_base]" value="<?php echo esc_attr( $magazine['flip_base'] ?? '' ); ?>"></td>
 					</tr>
 				</table>
 				<?php submit_button( __( 'حفظ', 'altijara' ) ); ?>
@@ -730,7 +748,7 @@ function altijara_render_settings_page() {
 				<table class="form-table">
 					<tr>
 						<th><?php esc_html_e( 'إعلان جانبي', 'altijara' ); ?></th>
-						<td><label><input type="checkbox" name="altijara_advertising[sidebar_enabled]" value="1" <?php checked( ! empty( $opts['advertising']['sidebar_enabled'] ) ); ?>> <?php esc_html_e( 'مفعّل', 'altijara' ); ?></label></td>
+						<td><label><input type="checkbox" name="altijara_advertising[sidebar_enabled]" value="1" <?php checked( ! empty( $advertising['sidebar_enabled'] ) ); ?>> <?php esc_html_e( 'مفعّل', 'altijara' ); ?></label></td>
 					</tr>
 				</table>
 				<p class="description"><?php esc_html_e( 'إعلان الهيدر يُضبط من تبويب منشئ الهيدر.', 'altijara' ); ?></p>

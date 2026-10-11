@@ -4,17 +4,18 @@
     :root {
       --article-bg: var(--bg-salmon, #FFF1E5);
       --article-card-bg: var(--bg-card, #F2DFCE);
-      --article-text: #262A33;
-      --article-teal: #1897B8;
+      --article-text: var(--ink-black, #262A33);
+      --article-teal: var(--accent-brand, #1897B8);
       --article-red-quote: #991B1B;
       --article-border: rgba(0, 0, 0, 0.08);
-      --font-arabic: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      /* Follow Design tab (--font-main); keep --font-arabic as alias */
+      --font-arabic: var(--font-main, 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
     }
 
     body {
       background-color: var(--article-bg);
       color: var(--article-text);
-      font-family: var(--font-arabic);
+      font-family: var(--font-main, var(--font-arabic));
       margin: 0;
       padding: 0;
       -webkit-font-smoothing: antialiased;

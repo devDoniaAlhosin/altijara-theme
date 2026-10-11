@@ -458,7 +458,13 @@ function altijara_get_category_choices() {
 			$choices[ (string) $key ] = sprintf( 'مفتاح: %s → %s', $key, $slug );
 		}
 	}
+	if ( is_wp_error( $terms ) || ! is_array( $terms ) ) {
+		return $choices;
+	}
 	foreach ( $terms as $term ) {
+		if ( ! $term instanceof WP_Term ) {
+			continue;
+		}
 		$choices[ $term->slug ]             = $term->name . ' (slug: ' . $term->slug . ')';
 		$choices[ (string) $term->term_id ] = $term->name . ' (ID: ' . $term->term_id . ')';
 	}
@@ -514,8 +520,30 @@ function altijara_get_post_titles_map( $ids ) {
  * @param array<string, mixed> $section Config.
  */
 function altijara_render_section_admin_card( $id, $section ) {
+	if ( ! is_array( $section ) ) {
+		$section = array();
+	}
+	$defaults = altijara_default_sections();
+	$section  = array_merge( isset( $defaults[ $id ] ) ? $defaults[ $id ] : array(
+		'label'        => $id,
+		'visible'      => false,
+		'category'     => '',
+		'tag'          => 0,
+		'manual_posts' => array(),
+		'issue_ids'    => array(),
+		'count'        => 4,
+		'offset'       => 0,
+		'orderby'      => 'date',
+		'order'        => 'DESC',
+		'variant'      => 'default',
+		'source'       => 'posts',
+		'view_period'  => 'all',
+		'widget'       => 'article_grid',
+		'layout'       => 'news_grid',
+	), $section );
+
 	$widget  = ! empty( $section['widget'] ) ? $section['widget'] : altijara_layout_to_widget( $section['layout'] ?? '' );
-	$wdef    = altijara_get_widget_definition( $widget );
+	$wdef    = function_exists( 'altijara_get_widget_definition' ) ? altijara_get_widget_definition( $widget ) : null;
 	$choices = altijara_get_category_choices();
 	$tags    = altijara_get_tag_choices();
 	$manual  = ! empty( $section['manual_posts'] ) ? implode( ',', array_map( 'absint', (array) $section['manual_posts'] ) ) : '';
@@ -523,12 +551,13 @@ function altijara_render_section_admin_card( $id, $section ) {
 	$field   = 'altijara_sections[' . esc_attr( $id ) . ']';
 	$titles  = altijara_get_post_titles_map( $section['manual_posts'] ?? array() );
 	$issue_t = altijara_get_post_titles_map( $section['issue_ids'] ?? array() );
+	$label   = isset( $section['label'] ) ? (string) $section['label'] : (string) $id;
 	?>
 	<details class="altijara-section-card" data-widget="<?php echo esc_attr( $widget ); ?>" <?php echo ! empty( $section['visible'] ) ? 'open' : ''; ?>>
 		<summary>
-			<strong><?php echo esc_html( $section['label'] ); ?></strong>
+			<strong><?php echo esc_html( $label ); ?></strong>
 			<code><?php echo esc_html( $id ); ?></code>
-			<span class="altijara-widget-badge"><?php echo esc_html( $wdef ? $wdef['label'] : $widget ); ?></span>
+			<span class="altijara-widget-badge"><?php echo esc_html( ( is_array( $wdef ) && ! empty( $wdef['label'] ) ) ? $wdef['label'] : $widget ); ?></span>
 			<span class="altijara-section-status"><?php echo ! empty( $section['visible'] ) ? 'ظاهر' : 'مخفي'; ?></span>
 		</summary>
 		<div class="altijara-section-body">
@@ -544,7 +573,7 @@ function altijara_render_section_admin_card( $id, $section ) {
 			<?php if ( altijara_widget_supports( $widget, 'label' ) ) : ?>
 				<p>
 					<label><?php esc_html_e( 'العنوان (عربي)', 'altijara' ); ?></label><br>
-					<input type="text" class="regular-text" name="<?php echo esc_attr( $field ); ?>[label]" value="<?php echo esc_attr( $section['label'] ); ?>">
+					<input type="text" class="regular-text" name="<?php echo esc_attr( $field ); ?>[label]" value="<?php echo esc_attr( $label ); ?>">
 				</p>
 			<?php endif; ?>
 

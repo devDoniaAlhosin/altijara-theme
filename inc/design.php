@@ -173,7 +173,7 @@ function altijara_sanitize_design_input( $raw ) {
  * @return string
  */
 function altijara_get_design_css() {
-	$design = altijara_get_option( 'design', array() );
+	$design = function_exists( 'altijara_get_option' ) ? altijara_get_option( 'design', array() ) : array();
 	if ( ! is_array( $design ) ) {
 		$design = array();
 	}
@@ -182,28 +182,47 @@ function altijara_get_design_css() {
 	$main  = altijara_resolve_font_stack( $design['font_main'], $design['font_main_custom'] ?? '', 'main' );
 	$serif = altijara_resolve_font_stack( $design['font_serif'], $design['font_serif_custom'] ?? '', 'serif' );
 
-	$brand = $design['accent_brand'];
-	$hover = $design['accent_hover'];
+	$brand = ! empty( $design['accent_brand'] ) ? $design['accent_brand'] : '#1897B8';
+	$hover = ! empty( $design['accent_hover'] ) ? $design['accent_hover'] : '#12748e';
 
-	$lines = array(
-		'--font-main: ' . $main,
-		'--font-serif: ' . $serif,
-		'--bg-salmon: ' . $design['bg_salmon'],
-		'--bg-salmon-light: ' . $design['bg_salmon_light'],
-		'--bg-card: ' . $design['bg_card'],
-		'--ink-black: ' . $design['ink_black'],
-		'--ink-secondary: ' . $design['ink_secondary'],
-		'--ink-muted: ' . $design['ink_muted'],
-		'--accent-brand: ' . $brand,
-		'--accent-red: ' . $brand,
-		'--accent-blue: ' . $brand,
-		'--color-brand: ' . $brand,
-		'--accent-red-hover: ' . $hover,
-		'--accent-black: ' . $design['ink_black'],
-		'--accent-amber: ' . $design['accent_amber'],
+	// Quote-safe: stacks already include family quotes from presets.
+	$vars = array(
+		'--font-main'       => $main,
+		'--font-serif'      => $serif,
+		'--font-arabic'     => $main, // article-page.css historically used this name.
+		'--bg-salmon'       => $design['bg_salmon'],
+		'--bg-salmon-light' => $design['bg_salmon_light'],
+		'--bg-card'         => $design['bg_card'],
+		'--ink-black'       => $design['ink_black'],
+		'--ink-secondary'   => $design['ink_secondary'],
+		'--ink-muted'       => $design['ink_muted'],
+		'--accent-brand'    => $brand,
+		'--accent-red'      => $brand,
+		'--accent-blue'     => $brand,
+		'--color-brand'     => $brand,
+		'--accent-red-hover'=> $hover,
+		'--accent-black'    => $design['ink_black'],
+		'--accent-amber'    => $design['accent_amber'],
+		'--article-teal'    => $brand,
+		'--article-text'    => $design['ink_black'],
+		'--article-bg'      => $design['bg_salmon'],
+		'--article-card-bg' => $design['bg_card'],
 	);
 
-	$css = ':root{' . implode( ';', $lines ) . ';}';
+	$parts = array();
+	foreach ( $vars as $name => $value ) {
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			continue;
+		}
+		// Strip characters that could break out of a CSS declaration.
+		$value   = str_replace( array( '<', '>', '{', '}' ), '', $value );
+		$parts[] = $name . ':' . $value;
+	}
+
+	$css  = ':root{' . implode( ';', $parts ) . '}';
+	// Force body/html so later stylesheets (e.g. article-page.css) cannot ignore admin fonts.
+	$css .= 'html,body{font-family:var(--font-main) !important;background-color:var(--bg-salmon);color:var(--ink-black)}';
 
 	if ( ! empty( $design['footer_bg'] ) || ! empty( $design['footer_text'] ) ) {
 		$css .= '.editorial-dark-footer{';
@@ -220,12 +239,30 @@ function altijara_get_design_css() {
 }
 
 /**
- * Print design CSS after main stylesheet.
+ * Attach design tokens to main stylesheet (cache-busted with theme version).
  */
 function altijara_enqueue_design_css() {
-	if ( ! wp_style_is( 'altijara-main', 'enqueued' ) ) {
+	if ( ! wp_style_is( 'altijara-main', 'enqueued' ) && ! wp_style_is( 'altijara-main', 'registered' ) ) {
 		return;
 	}
-	wp_add_inline_style( 'altijara-main', altijara_get_design_css() );
+	$css = altijara_get_design_css();
+	if ( $css ) {
+		wp_add_inline_style( 'altijara-main', $css );
+	}
 }
 add_action( 'wp_enqueue_scripts', 'altijara_enqueue_design_css', 20 );
+
+/**
+ * Print design CSS last in <head> so it wins over article-page.css and plugin CSS.
+ */
+function altijara_print_design_css_head() {
+	if ( is_admin() ) {
+		return;
+	}
+	$css = altijara_get_design_css();
+	if ( ! $css ) {
+		return;
+	}
+	echo '<style id="altijara-design-tokens">' . $css . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized in altijara_get_design_css().
+}
+add_action( 'wp_head', 'altijara_print_design_css_head', 100 );
