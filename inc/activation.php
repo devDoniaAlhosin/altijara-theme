@@ -9,7 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ALTIJARA_SETUP_FLAG', 'altijara_theme_setup_state' );
+if ( ! defined( 'ALTIJARA_SETUP_FLAG' ) ) {
+	define( 'ALTIJARA_SETUP_FLAG', 'altijara_theme_setup_state' );
+}
 
 /**
  * Resolve a blueprint item to a URL (or null if pending).

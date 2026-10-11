@@ -16,9 +16,16 @@ function altijara_enqueue_assets() {
 	$ver = ALTIJARA_THEME_VERSION;
 
 	wp_enqueue_style(
+		'altijara-fonts',
+		altijara_asset( 'assets/css/fonts.css' ),
+		array(),
+		$ver
+	);
+
+	wp_enqueue_style(
 		'altijara-main',
 		altijara_asset( 'assets/css/style.css' ),
-		array(),
+		array( 'altijara-fonts' ),
 		$ver
 	);
 

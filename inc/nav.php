@@ -28,45 +28,58 @@ function altijara_register_nav_menus() {
 add_action( 'after_setup_theme', 'altijara_register_nav_menus', 20 );
 
 /**
- * Footer quick-links walker (span + caret).
+ * Register footer walker after WP nav classes are available (avoids fatal on early load).
  */
-class Altijara_Footer_Link_Walker extends Walker_Nav_Menu {
-	/**
-	 * @param string   $output Output.
-	 * @param WP_Post  $item   Item.
-	 * @param int      $depth  Depth.
-	 * @param stdClass $args   Args.
-	 * @param int      $id     ID.
-	 */
-	public function start_el( &$output, $item, $depth = 0, $args = null, $id = 0 ) {
-		$classes = empty( $item->classes ) ? array() : (array) $item->classes;
-		$class   = $classes ? ' class="' . esc_attr( implode( ' ', array_map( 'sanitize_html_class', $classes ) ) ) . '"' : '';
-		$url     = ! empty( $item->url ) ? $item->url : '';
-		$target  = ! empty( $item->target ) ? $item->target : '';
-		$rel     = '_blank' === $target ? 'noopener' : '';
-		$title   = apply_filters( 'the_title', $item->title, $item->ID );
-
-		$output .= '<li' . $class . '>';
-		$output .= '<a href="' . esc_url( $url ) . '"';
-		if ( $target ) {
-			$output .= ' target="' . esc_attr( $target ) . '"';
-		}
-		if ( $rel ) {
-			$output .= ' rel="' . esc_attr( $rel ) . '"';
-		}
-		$output .= '><span>' . esc_html( $title ) . '</span><span class="footer-caret">‹</span></a>';
+function altijara_register_nav_walkers() {
+	if ( class_exists( 'Altijara_Footer_Link_Walker', false ) ) {
+		return;
+	}
+	if ( ! class_exists( 'Walker_Nav_Menu', false ) ) {
+		return;
 	}
 
 	/**
-	 * @param string   $output Output.
-	 * @param WP_Post  $item   Item.
-	 * @param int      $depth  Depth.
-	 * @param stdClass $args   Args.
+	 * Footer quick-links walker (span + caret).
 	 */
-	public function end_el( &$output, $item, $depth = 0, $args = null ) {
-		$output .= '</li>';
+	class Altijara_Footer_Link_Walker extends Walker_Nav_Menu {
+		/**
+		 * @param string   $output Output.
+		 * @param WP_Post  $item   Item.
+		 * @param int      $depth  Depth.
+		 * @param stdClass $args   Args.
+		 * @param int      $id     ID.
+		 */
+		public function start_el( &$output, $item, $depth = 0, $args = null, $id = 0 ) {
+			$classes = empty( $item->classes ) ? array() : (array) $item->classes;
+			$class   = $classes ? ' class="' . esc_attr( implode( ' ', array_map( 'sanitize_html_class', $classes ) ) ) . '"' : '';
+			$url     = ! empty( $item->url ) ? $item->url : '';
+			$target  = ! empty( $item->target ) ? $item->target : '';
+			$rel     = '_blank' === $target ? 'noopener' : '';
+			$title   = apply_filters( 'the_title', $item->title, $item->ID );
+
+			$output .= '<li' . $class . '>';
+			$output .= '<a href="' . esc_url( $url ) . '"';
+			if ( $target ) {
+				$output .= ' target="' . esc_attr( $target ) . '"';
+			}
+			if ( $rel ) {
+				$output .= ' rel="' . esc_attr( $rel ) . '"';
+			}
+			$output .= '><span>' . esc_html( $title ) . '</span><span class="footer-caret">‹</span></a>';
+		}
+
+		/**
+		 * @param string   $output Output.
+		 * @param WP_Post  $item   Item.
+		 * @param int      $depth  Depth.
+		 * @param stdClass $args   Args.
+		 */
+		public function end_el( &$output, $item, $depth = 0, $args = null ) {
+			$output .= '</li>';
+		}
 	}
 }
+add_action( 'init', 'altijara_register_nav_walkers', 1 );
 
 /**
  * Whether a location has an assigned menu with items.
@@ -215,17 +228,18 @@ function altijara_render_footer_quick_menu() {
 	if ( ! altijara_has_nav_menu( $loc ) ) {
 		return false;
 	}
-	wp_nav_menu(
-		array(
-			'theme_location' => $loc,
-			'container'      => false,
-			'menu_class'     => 'footer-links-list',
-			'fallback_cb'    => false,
-			'depth'          => 1,
-			'walker'         => new Altijara_Footer_Link_Walker(),
-			'items_wrap'     => '<ul class="%2$s" data-wp-menu="1">%3$s</ul>',
-		)
+	$args = array(
+		'theme_location' => $loc,
+		'container'      => false,
+		'menu_class'     => 'footer-links-list',
+		'fallback_cb'    => false,
+		'depth'          => 1,
+		'items_wrap'     => '<ul class="%2$s" data-wp-menu="1">%3$s</ul>',
 	);
+	if ( class_exists( 'Altijara_Footer_Link_Walker', false ) ) {
+		$args['walker'] = new Altijara_Footer_Link_Walker();
+	}
+	wp_nav_menu( $args );
 	return true;
 }
 

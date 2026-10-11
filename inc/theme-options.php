@@ -9,7 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ALTIJARA_OPTION_KEY', 'altijara_theme_settings' );
+if ( ! defined( 'ALTIJARA_OPTION_KEY' ) ) {
+	define( 'ALTIJARA_OPTION_KEY', 'altijara_theme_settings' );
+}
 
 /**
  * Get all settings (merged with defaults for read — does not write).
@@ -17,11 +19,32 @@ define( 'ALTIJARA_OPTION_KEY', 'altijara_theme_settings' );
  * @return array<string, mixed>
  */
 function altijara_get_options() {
-	$saved = get_option( ALTIJARA_OPTION_KEY, array() );
+	$defaults = altijara_default_options();
+	$saved    = get_option( ALTIJARA_OPTION_KEY, array() );
 	if ( ! is_array( $saved ) ) {
 		$saved = array();
 	}
-	return array_replace_recursive( altijara_default_options(), $saved );
+
+	// If a branch was corrupted to a non-array, drop it so defaults win.
+	foreach ( array_keys( $defaults ) as $branch ) {
+		if ( array_key_exists( $branch, $saved ) && is_array( $defaults[ $branch ] ) && ! is_array( $saved[ $branch ] ) ) {
+			unset( $saved[ $branch ] );
+		}
+	}
+
+	$merged = array_replace_recursive( $defaults, $saved );
+
+	// Guarantee critical admin branches are arrays (prevents fatal on theme options).
+	foreach ( array( 'general', 'design', 'header', 'footer', 'social', 'article', 'magazine', 'advertising', 'integrations', 'advanced', 'category_map', 'sections' ) as $branch ) {
+		if ( ! isset( $merged[ $branch ] ) || ! is_array( $merged[ $branch ] ) ) {
+			$merged[ $branch ] = isset( $defaults[ $branch ] ) && is_array( $defaults[ $branch ] ) ? $defaults[ $branch ] : array();
+		}
+	}
+	if ( empty( $merged['social']['items'] ) || ! is_array( $merged['social']['items'] ) ) {
+		$merged['social']['items'] = $defaults['social']['items'];
+	}
+
+	return $merged;
 }
 
 /**
@@ -76,6 +99,7 @@ add_action( 'admin_menu', 'altijara_register_admin_menu' );
 function altijara_settings_tabs() {
 	return array(
 		'general'      => __( 'إعدادات عامة', 'altijara' ),
+		'design'       => __( 'المظهر (خطوط وألوان)', 'altijara' ),
 		'header'       => __( 'منشئ الهيدر', 'altijara' ),
 		'navigation'   => __( 'قوائم التنقّل', 'altijara' ),
 		'homepage'     => __( 'أقسام الرئيسية', 'altijara' ),
@@ -126,7 +150,7 @@ function altijara_sanitize_header_input( $raw ) {
 		'logo_hover_url'        => isset( $raw['logo_hover_url'] ) ? esc_url_raw( $raw['logo_hover_url'] ) : $d['logo_hover_url'],
 		'logo_width'            => isset( $raw['logo_width'] ) ? max( 0, (int) $raw['logo_width'] ) : 0,
 		'logo_height'           => isset( $raw['logo_height'] ) ? max( 0, (int) $raw['logo_height'] ) : 0,
-		'background'            => isset( $raw['background'] ) ? sanitize_hex_color( $raw['background'] ) : '',
+		'background'            => ( isset( $raw['background'] ) && is_string( $raw['background'] ) && '' !== $raw['background'] ) ? ( sanitize_hex_color( $raw['background'] ) ?: '' ) : '',
 		'layout'                => isset( $raw['layout'] ) ? sanitize_key( $raw['layout'] ) : 'default',
 		'sticky'                => ! empty( $raw['sticky'] ),
 		'show_top_bar'          => ! empty( $raw['show_top_bar'] ),
@@ -167,8 +191,8 @@ function altijara_sanitize_footer_input( $raw ) {
 		'contact_email'    => isset( $raw['contact_email'] ) ? sanitize_email( $raw['contact_email'] ) : '',
 		'contact_phone'    => isset( $raw['contact_phone'] ) ? sanitize_text_field( $raw['contact_phone'] ) : '',
 		'copyright'        => isset( $raw['copyright'] ) ? sanitize_text_field( $raw['copyright'] ) : $d['copyright'],
-		'background'       => isset( $raw['background'] ) ? sanitize_hex_color( $raw['background'] ) : '',
-		'text_color'       => isset( $raw['text_color'] ) ? sanitize_hex_color( $raw['text_color'] ) : '',
+		'background'       => ( isset( $raw['background'] ) && is_string( $raw['background'] ) && '' !== $raw['background'] ) ? ( sanitize_hex_color( $raw['background'] ) ?: '' ) : '',
+		'text_color'       => ( isset( $raw['text_color'] ) && is_string( $raw['text_color'] ) && '' !== $raw['text_color'] ) ? ( sanitize_hex_color( $raw['text_color'] ) ?: '' ) : '',
 		'layout'           => isset( $raw['layout'] ) ? sanitize_key( $raw['layout'] ) : 'default',
 	);
 }
@@ -268,6 +292,11 @@ function altijara_render_settings_page() {
 			echo '<div class="notice notice-success"><p>' . esc_html__( 'تم حفظ الإعدادات العامة.', 'altijara' ) . '</p></div>';
 		}
 
+		if ( isset( $_POST['altijara_design'] ) && is_array( $_POST['altijara_design'] ) && function_exists( 'altijara_sanitize_design_input' ) ) {
+			altijara_update_options( array( 'design' => altijara_sanitize_design_input( wp_unslash( $_POST['altijara_design'] ) ) ) ); // phpcs:ignore
+			echo '<div class="notice notice-success"><p>' . esc_html__( 'تم حفظ إعدادات المظهر (الخطوط والألوان).', 'altijara' ) . '</p></div>';
+		}
+
 		if ( isset( $_POST['altijara_header'] ) && is_array( $_POST['altijara_header'] ) ) {
 			altijara_update_options( array( 'header' => altijara_sanitize_header_input( wp_unslash( $_POST['altijara_header'] ) ) ) ); // phpcs:ignore
 			echo '<div class="notice notice-success"><p>' . esc_html__( 'تم حفظ إعدادات الهيدر.', 'altijara' ) . '</p></div>';
@@ -332,13 +361,19 @@ function altijara_render_settings_page() {
 	}
 
 	$opts   = altijara_get_options();
-	$header = $opts['header'];
-	$footer = $opts['footer'];
-	$social = $opts['social']['items'] ?? array();
-	$map    = $opts['category_map'] ?? array();
+	$header = is_array( $opts['header'] ?? null ) ? $opts['header'] : array();
+	$footer = is_array( $opts['footer'] ?? null ) ? $opts['footer'] : array();
+	$social = ( is_array( $opts['social'] ?? null ) && ! empty( $opts['social']['items'] ) && is_array( $opts['social']['items'] ) )
+		? $opts['social']['items']
+		: ( altijara_default_options()['social']['items'] ?? array() );
+	$map    = is_array( $opts['category_map'] ?? null ) ? $opts['category_map'] : array();
 	?>
 	<div class="wrap" dir="rtl">
 		<h1><?php esc_html_e( 'Altijara Theme — إعدادات القالب', 'altijara' ); ?></h1>
+		<p class="description">
+			<?php esc_html_e( 'تطوير القالب بواسطة', 'altijara' ); ?>
+			<a href="https://o2nations.com/" target="_blank" rel="noopener">O2Nations</a>
+		</p>
 		<nav class="nav-tab-wrapper" style="margin-top:12px;">
 			<?php foreach ( $tabs as $id => $label ) : ?>
 				<a class="nav-tab <?php echo $active === $id ? 'nav-tab-active' : ''; ?>"
@@ -370,6 +405,99 @@ function altijara_render_settings_page() {
 					<?php endforeach; ?>
 				</table>
 				<?php submit_button( __( 'حفظ', 'altijara' ) ); ?>
+
+			<?php elseif ( 'design' === $active ) : ?>
+				<?php
+				$design = is_array( $opts['design'] ?? null ) ? array_merge( altijara_default_design(), $opts['design'] ) : altijara_default_design();
+				$main_presets  = altijara_font_main_presets();
+				$serif_presets = altijara_font_serif_presets();
+				?>
+				<p><?php esc_html_e( 'الخطوط الافتراضية هي نفسها المستخدمة في التصميم: IBM Plex Sans Arabic و Playfair Display — محمّلة محلياً من مجلد القالب (بدون Google Fonts).', 'altijara' ); ?></p>
+				<h2><?php esc_html_e( 'الخطوط', 'altijara' ); ?></h2>
+				<table class="form-table">
+					<tr>
+						<th><label for="font_main"><?php esc_html_e( 'الخط الأساسي (النصوص)', 'altijara' ); ?></label></th>
+						<td>
+							<select name="altijara_design[font_main]" id="font_main">
+								<?php foreach ( $main_presets as $key => $preset ) : ?>
+									<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $design['font_main'], $key ); ?>><?php echo esc_html( $preset['label'] ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php esc_html_e( 'المسار: assets/fonts/ibm-plex-sans-arabic/', 'altijara' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="font_main_custom"><?php esc_html_e( 'خط أساسي مخصص (CSS)', 'altijara' ); ?></label></th>
+						<td>
+							<input class="large-text" type="text" id="font_main_custom" name="altijara_design[font_main_custom]" value="<?php echo esc_attr( $design['font_main_custom'] ); ?>" placeholder="'IBM Plex Sans Arabic', Tahoma, sans-serif">
+							<p class="description"><?php esc_html_e( 'يُستخدم فقط عند اختيار «مخصص».', 'altijara' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="font_serif"><?php esc_html_e( 'خط العناوين المزخرف', 'altijara' ); ?></label></th>
+						<td>
+							<select name="altijara_design[font_serif]" id="font_serif">
+								<?php foreach ( $serif_presets as $key => $preset ) : ?>
+									<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $design['font_serif'], $key ); ?>><?php echo esc_html( $preset['label'] ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php esc_html_e( 'المسار: assets/fonts/playfair-display/', 'altijara' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="font_serif_custom"><?php esc_html_e( 'خط مزخرف مخصص (CSS)', 'altijara' ); ?></label></th>
+						<td>
+							<input class="large-text" type="text" id="font_serif_custom" name="altijara_design[font_serif_custom]" value="<?php echo esc_attr( $design['font_serif_custom'] ); ?>" placeholder="'Playfair Display', Georgia, serif">
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'الألوان', 'altijara' ); ?></h2>
+				<table class="form-table">
+					<?php
+					$color_fields = array(
+						'bg_salmon'       => __( 'خلفية الصفحة', 'altijara' ),
+						'bg_salmon_light' => __( 'خلفية فاتحة ثانوية', 'altijara' ),
+						'bg_card'         => __( 'خلفية البطاقات', 'altijara' ),
+						'ink_black'       => __( 'لون النص الأساسي', 'altijara' ),
+						'ink_secondary'   => __( 'لون النص الثانوي', 'altijara' ),
+						'ink_muted'       => __( 'لون النص الخافت', 'altijara' ),
+						'accent_brand'    => __( 'لون العلامة / التمييز', 'altijara' ),
+						'accent_hover'    => __( 'لون التمييز عند المرور', 'altijara' ),
+						'accent_amber'    => __( 'لون تنبيهي (amber)', 'altijara' ),
+						'footer_bg'       => __( 'خلفية التذييل (اختياري)', 'altijara' ),
+						'footer_text'     => __( 'نص التذييل (اختياري)', 'altijara' ),
+					);
+					foreach ( $color_fields as $ckey => $clabel ) :
+						$val = $design[ $ckey ] ?? '';
+						?>
+						<tr>
+							<th><label for="design-<?php echo esc_attr( $ckey ); ?>"><?php echo esc_html( $clabel ); ?></label></th>
+							<td>
+								<input type="text" class="altijara-color-text" id="design-<?php echo esc_attr( $ckey ); ?>" name="altijara_design[<?php echo esc_attr( $ckey ); ?>]" value="<?php echo esc_attr( $val ); ?>" placeholder="#1897B8" style="width:110px">
+								<input type="color" class="altijara-color-picker" value="<?php echo esc_attr( $val && preg_match( '/^#[0-9A-Fa-f]{6}$/', $val ) ? $val : '#1897B8' ); ?>" data-target="design-<?php echo esc_attr( $ckey ); ?>" style="vertical-align:middle;margin-inline-start:8px;">
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</table>
+				<?php submit_button( __( 'حفظ المظهر', 'altijara' ) ); ?>
+				<button type="submit" name="altijara_reset_group" value="design" class="button" onclick="return confirm('إعادة الخطوط والألوان للافتراضي؟');"><?php esc_html_e( 'إعادة للافتراضي', 'altijara' ); ?></button>
+				<script>
+				(function(){
+					document.querySelectorAll('.altijara-color-picker').forEach(function(picker){
+						picker.addEventListener('input', function(){
+							var t = document.getElementById(picker.getAttribute('data-target'));
+							if (t) t.value = picker.value;
+						});
+					});
+					document.querySelectorAll('.altijara-color-text').forEach(function(input){
+						input.addEventListener('change', function(){
+							var picker = document.querySelector('.altijara-color-picker[data-target="'+input.id+'"]');
+							if (picker && /^#[0-9A-Fa-f]{6}$/.test(input.value)) picker.value = input.value;
+						});
+					});
+				})();
+				</script>
 
 			<?php elseif ( 'header' === $active ) : ?>
 				<table class="form-table">
@@ -616,7 +744,8 @@ function altijara_render_settings_page() {
 					</button>
 				</p>
 				<?php
-				$state = get_option( ALTIJARA_SETUP_FLAG, array() );
+				$setup_flag = defined( 'ALTIJARA_SETUP_FLAG' ) ? ALTIJARA_SETUP_FLAG : 'altijara_theme_setup_state';
+				$state      = get_option( $setup_flag, array() );
 				if ( ! empty( $state['last_report'] ) && is_array( $state['last_report'] ) ) :
 					?>
 					<h3><?php esc_html_e( 'آخر تقرير إعداد', 'altijara' ); ?></h3>

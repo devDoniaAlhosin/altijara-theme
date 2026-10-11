@@ -471,18 +471,23 @@ function altijara_get_category_choices() {
  * @return array<int|string, string>
  */
 function altijara_get_tag_choices() {
-	$terms   = get_tags(
+	$terms = get_terms(
 		array(
+			'taxonomy'   => 'post_tag',
 			'hide_empty' => false,
 			'orderby'    => 'name',
 			'number'     => 200,
 		)
 	);
 	$choices = array( 0 => '— بدون —' );
-	if ( is_array( $terms ) ) {
-		foreach ( $terms as $term ) {
-			$choices[ (int) $term->term_id ] = $term->name . ' (ID: ' . $term->term_id . ')';
+	if ( is_wp_error( $terms ) || ! is_array( $terms ) ) {
+		return $choices;
+	}
+	foreach ( $terms as $term ) {
+		if ( ! $term instanceof WP_Term ) {
+			continue;
 		}
+		$choices[ (int) $term->term_id ] = $term->name . ' (ID: ' . $term->term_id . ')';
 	}
 	return $choices;
 }

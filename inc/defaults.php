@@ -24,6 +24,23 @@ function altijara_default_options() {
 		'general'      => array(
 			'site_tagline_ar' => 'تصدر عن غرفة جدة منذ عام 1948',
 		),
+		'design'       => function_exists( 'altijara_default_design' ) ? altijara_default_design() : array(
+			'font_main'         => 'ibm_plex',
+			'font_serif'        => 'playfair',
+			'font_main_custom'  => '',
+			'font_serif_custom' => '',
+			'bg_salmon'         => '#FFF1E5',
+			'bg_salmon_light'   => '#F2DFCE',
+			'bg_card'           => '#FFF7EF',
+			'ink_black'         => '#262A33',
+			'ink_secondary'     => '#3b424e',
+			'ink_muted'         => '#6e7787',
+			'accent_brand'      => '#1897B8',
+			'accent_hover'      => '#12748e',
+			'accent_amber'      => '#d97706',
+			'footer_bg'         => '',
+			'footer_text'       => '',
+		),
 		'header'       => array(
 			'logo_url'            => $logo_default,
 			'logo_hover_url'      => $logo_hover,

@@ -3,7 +3,8 @@
    Clean, High-Performance, Pixel-Perfect Layout
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+/* Fonts: self-hosted via assets/css/fonts.css (IBM Plex Sans Arabic + Playfair Display).
+   Colors/fonts overridable from Admin → Altijara Theme → المظهر */
 
 :root {
   --bg-salmon: #FFF1E5;
