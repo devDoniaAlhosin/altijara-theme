@@ -326,7 +326,11 @@ function altijara_setup_admin_notice() {
 
 	$created = 0;
 	$skipped = 0;
-	foreach ( $report['menus'] as $row ) {
+	$menus   = isset( $report['menus'] ) && is_array( $report['menus'] ) ? $report['menus'] : array();
+	foreach ( $menus as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
 		if ( ! empty( $row['created'] ) || ! empty( $row['items_added'] ) ) {
 			++$created;
 		}
@@ -334,6 +338,8 @@ function altijara_setup_admin_notice() {
 			++$skipped;
 		}
 	}
+	$options_status = isset( $report['options'] ) && is_scalar( $report['options'] ) ? (string) $report['options'] : '—';
+	$pending        = isset( $report['pending'] ) && is_array( $report['pending'] ) ? $report['pending'] : array();
 	?>
 	<div class="notice notice-success is-dismissible">
 		<p><strong><?php esc_html_e( 'Altijara Theme — اكتمل الإعداد الأولي', 'altijara' ); ?></strong></p>
@@ -342,17 +348,17 @@ function altijara_setup_admin_notice() {
 			printf(
 				/* translators: 1: options status, 2: menus created/updated, 3: skipped */
 				esc_html__( 'الإعدادات: %1$s · قوائم محدّثة: %2$d · قوائم موجودة (تم التخطي): %3$d', 'altijara' ),
-				esc_html( (string) $report['options'] ),
+				esc_html( $options_status ),
 				(int) $created,
 				(int) $skipped
 			);
 			?>
 		</p>
-		<?php if ( ! empty( $report['pending'] ) ) : ?>
+		<?php if ( ! empty( $pending ) ) : ?>
 			<p><?php esc_html_e( 'عناصر تحتاج مراجعة يدوية (تصنيف/صفحة غير موجودة):', 'altijara' ); ?></p>
 			<ul style="list-style:disc;margin-inline-start:1.5em;">
-				<?php foreach ( array_slice( $report['pending'], 0, 20 ) as $p ) : ?>
-					<li><?php echo esc_html( $p ); ?></li>
+				<?php foreach ( array_slice( $pending, 0, 20 ) as $p ) : ?>
+					<li><?php echo esc_html( is_scalar( $p ) ? (string) $p : wp_json_encode( $p ) ); ?></li>
 				<?php endforeach; ?>
 			</ul>
 		<?php endif; ?>

@@ -41,7 +41,18 @@ function altijara_get_options() {
 		}
 	}
 	if ( empty( $merged['social']['items'] ) || ! is_array( $merged['social']['items'] ) ) {
-		$merged['social']['items'] = $defaults['social']['items'];
+		$merged['social']['items'] = isset( $defaults['social']['items'] ) && is_array( $defaults['social']['items'] )
+			? $defaults['social']['items']
+			: array();
+	}
+
+	// category_map values must be strings (WP 6.7+ esc_attr(null) TypeError → HTTP 500).
+	if ( is_array( $merged['category_map'] ) ) {
+		$clean_map = array();
+		foreach ( $merged['category_map'] as $k => $v ) {
+			$clean_map[ sanitize_key( (string) $k ) ] = is_scalar( $v ) ? (string) $v : '';
+		}
+		$merged['category_map'] = $clean_map;
 	}
 
 	return $merged;
@@ -243,13 +254,30 @@ function altijara_admin_enqueue_settings( $hook ) {
 add_action( 'admin_enqueue_scripts', 'altijara_admin_enqueue_settings' );
 
 /**
- * Render settings page.
+ * Render settings page (catch fatals so admin shows the real error instead of blank 500).
  */
 function altijara_render_settings_page() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
 
+	try {
+		altijara_render_settings_page_content();
+	} catch ( Throwable $e ) {
+		echo '<div class="wrap" dir="ltr">';
+		echo '<h1>Altijara Theme Options — error</h1>';
+		echo '<div class="notice notice-error"><p><strong>' . esc_html( $e->getMessage() ) . '</strong></p>';
+		echo '<p><code>' . esc_html( $e->getFile() . ':' . $e->getLine() ) . '</code></p>';
+		echo '<pre style="max-width:960px;overflow:auto;background:#fff;padding:12px;border:1px solid #ccd0d4;">' . esc_html( $e->getTraceAsString() ) . '</pre>';
+		echo '<p>Re-upload the full <code>altijara-theme</code> folder, then purge LiteSpeed cache. Enable <code>WP_DEBUG_LOG</code> if this persists.</p>';
+		echo '</div></div>';
+	}
+}
+
+/**
+ * Settings page body.
+ */
+function altijara_render_settings_page_content() {
 	$tabs   = altijara_settings_tabs();
 	$active = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( ! isset( $tabs[ $active ] ) ) {
@@ -411,9 +439,9 @@ function altijara_render_settings_page() {
 				<table class="form-table">
 					<?php foreach ( $map as $key => $value ) : ?>
 						<tr>
-							<th><label><?php echo esc_html( $key ); ?></label></th>
+							<th><label><?php echo esc_html( (string) $key ); ?></label></th>
 							<td>
-								<input class="regular-text" type="text" name="altijara_category_map[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( $value ); ?>">
+								<input class="regular-text" type="text" name="altijara_category_map[<?php echo esc_attr( (string) $key ); ?>]" value="<?php echo esc_attr( is_scalar( $value ) ? (string) $value : '' ); ?>">
 							</td>
 						</tr>
 					<?php endforeach; ?>
