@@ -1,0 +1,92 @@
+/* Altijara Theme — Homepage Section Manager admin */
+.altijara-section-card {
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  margin: 0 0 12px;
+  padding: 0 14px;
+}
+.altijara-section-card summary {
+  cursor: pointer;
+  padding: 14px 0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.altijara-section-card summary code {
+  background: #f0f0f1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.altijara-widget-badge {
+  font-size: 11px;
+  background: #e8f0fe;
+  color: #1d4ed8;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.altijara-section-status {
+  margin-inline-start: auto;
+  font-size: 12px;
+  color: #646970;
+}
+.altijara-section-body {
+  padding: 0 0 16px;
+  border-top: 1px solid #f0f0f1;
+}
+.altijara-section-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.altijara-post-picker {
+  margin: 12px 0 16px;
+  max-width: 560px;
+}
+.altijara-post-picker label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.altijara-picker-results,
+.altijara-picker-selected {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.altijara-picker-results {
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: #fff;
+  max-height: 220px;
+  overflow: auto;
+}
+.altijara-picker-results li button {
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.altijara-picker-results li button:hover {
+  background: #f0f6fc;
+}
+.altijara-picker-selected li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f1;
+}
+.altijara-picker-selected li span {
+  flex: 1;
+}
+.altijara-picker-empty,
+.altijara-picker-loading {
+  padding: 10px;
+  color: #646970;
+}

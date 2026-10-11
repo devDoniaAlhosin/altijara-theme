@@ -1,0 +1,16 @@
+/*
+Theme Name: Altijara Theme
+Theme URI: https://chocolate-jellyfish-822708.hostingersite.com/
+Author: Altijara Development Team / Bohimum Geeks
+Author URI: https://altijaramagazine.com/
+Description: Native WordPress theme for مجلة التجارة (Altijara Magazine) — Jeddah Chamber. Converted from the static editorial redesign. RTL Arabic, no heavy frameworks.
+Version: 2.2.0
+Requires at least: 6.0
+Tested up to: 6.7
+Requires PHP: 7.4
+Text Domain: altijara
+Domain Path: /languages
+Tags: rtl, news, magazine, custom-menu, featured-images, translation-ready
+*/
+
+/* Main styles are enqueued from assets/css/style.css via inc/enqueue.php */
