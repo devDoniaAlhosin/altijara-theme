@@ -157,16 +157,41 @@ function altijara_nav_menu_item_args( $row, $resolved, $position = 1 ) {
 		$args['menu-item-url']       = isset( $resolved['url'] ) ? (string) $resolved['url'] : '';
 		$args['menu-item-object']    = 'custom';
 		$args['menu-item-object-id'] = 0;
-	} elseif ( ! empty( $resolved['url'] ) ) {
-		// Helpful when WP regenerates; taxonomy/post_type ignore this once object is valid.
-		$args['menu-item-url'] = (string) $resolved['url'];
 	}
+	// Do not set menu-item-url for taxonomy/post_type — WP derives it from the object.
+	// Passing a URL can leave broken items stuck as "Custom Link" in the Menus UI.
 
 	if ( ! empty( $row['target'] ) ) {
 		$args['menu-item-target'] = $row['target'];
 	}
 
 	return $args;
+}
+
+/**
+ * Force correct nav-menu meta after save (converts legacy Custom Link → Category).
+ *
+ * @param int                  $item_id  Menu item post ID.
+ * @param array<string, mixed> $args     Args passed to wp_update_nav_menu_item.
+ */
+function altijara_force_nav_menu_item_meta( $item_id, $args ) {
+	$item_id = absint( $item_id );
+	if ( ! $item_id || is_wp_error( $item_id ) ) {
+		return;
+	}
+	$type = isset( $args['menu-item-type'] ) ? (string) $args['menu-item-type'] : '';
+	if ( ! in_array( $type, array( 'taxonomy', 'post_type', 'custom', 'post_type_archive' ), true ) ) {
+		return;
+	}
+	update_post_meta( $item_id, '_menu_item_type', $type );
+	update_post_meta( $item_id, '_menu_item_object', isset( $args['menu-item-object'] ) ? (string) $args['menu-item-object'] : '' );
+	update_post_meta( $item_id, '_menu_item_object_id', (string) absint( $args['menu-item-object-id'] ?? 0 ) );
+	if ( 'custom' === $type && ! empty( $args['menu-item-url'] ) ) {
+		update_post_meta( $item_id, '_menu_item_url', esc_url_raw( (string) $args['menu-item-url'] ) );
+	} elseif ( 'custom' !== $type ) {
+		// Clear stale custom URL so admin shows Category / Page, not Custom Link.
+		delete_post_meta( $item_id, '_menu_item_url' );
+	}
 }
 
 /**
@@ -213,6 +238,7 @@ function altijara_ensure_nav_menu( $menu_name, $blueprint ) {
 		$args    = altijara_nav_menu_item_args( $row, $resolved, $position );
 		$item_id = wp_update_nav_menu_item( $report['menu_id'], 0, $args );
 		if ( ! is_wp_error( $item_id ) ) {
+			altijara_force_nav_menu_item_meta( (int) $item_id, $args );
 			++$report['items_added'];
 			++$position;
 		}
@@ -245,24 +271,42 @@ function altijara_sync_nav_menus_from_category_map() {
 		flush_rewrite_rules( false );
 	}
 
-	$specs = array(
-		array(
-			'name'      => 'Altijara — القائمة الرئيسية',
-			'blueprint' => function_exists( 'altijara_default_primary_nav_blueprint' ) ? altijara_default_primary_nav_blueprint() : array(),
-		),
-		array(
-			'name'      => 'Altijara — أقسام التذييل',
-			'blueprint' => function_exists( 'altijara_default_footer_sections_blueprint' ) ? altijara_default_footer_sections_blueprint() : array(),
-		),
-	);
+	$primary_bp = function_exists( 'altijara_default_primary_nav_blueprint' ) ? altijara_default_primary_nav_blueprint() : array();
+	$footer_bp  = function_exists( 'altijara_default_footer_sections_blueprint' ) ? altijara_default_footer_sections_blueprint() : array();
 
-	foreach ( $specs as $spec ) {
-		$menu = wp_get_nav_menu_object( $spec['name'] );
-		if ( ! $menu || empty( $spec['blueprint'] ) ) {
+	$menu_ids = array();
+	$named    = array(
+		'Altijara — القائمة الرئيسية' => $primary_bp,
+		'Altijara — أقسام التذييل'     => $footer_bp,
+	);
+	foreach ( $named as $name => $blueprint ) {
+		$menu = wp_get_nav_menu_object( $name );
+		if ( $menu ) {
+			$menu_ids[ (int) $menu->term_id ] = $blueprint;
+		}
+	}
+
+	// Also sync whatever is assigned to primary / footer / mobile (renamed menus).
+	$locations = get_nav_menu_locations();
+	if ( is_array( $locations ) ) {
+		foreach ( array( 'primary', 'mobile', 'footer' ) as $loc ) {
+			if ( empty( $locations[ $loc ] ) ) {
+				continue;
+			}
+			$mid = (int) $locations[ $loc ];
+			if ( ! $mid || isset( $menu_ids[ $mid ] ) ) {
+				continue;
+			}
+			$menu_ids[ $mid ] = ( 'footer' === $loc ) ? $footer_bp : $primary_bp;
+		}
+	}
+
+	foreach ( $menu_ids as $menu_id => $blueprint ) {
+		if ( ! $blueprint ) {
 			continue;
 		}
 
-		$items    = wp_get_nav_menu_items( $menu->term_id );
+		$items    = wp_get_nav_menu_items( $menu_id );
 		$by_title = array();
 		if ( is_array( $items ) ) {
 			foreach ( $items as $item ) {
@@ -271,7 +315,7 @@ function altijara_sync_nav_menus_from_category_map() {
 		}
 
 		$position = 1;
-		foreach ( $spec['blueprint'] as $row ) {
+		foreach ( $blueprint as $row ) {
 			$label    = isset( $row['label'] ) ? trim( (string) $row['label'] ) : '';
 			$resolved = altijara_resolve_blueprint_item( $row );
 			if ( ! $label || empty( $resolved['url'] ) ) {
@@ -284,12 +328,21 @@ function altijara_sync_nav_menus_from_category_map() {
 
 			$args  = altijara_nav_menu_item_args( $row, $resolved, $position );
 			$db_id = 0;
-			if ( isset( $by_title[ $label ] ) ) {
-				$db_id = (int) $by_title[ $label ]->db_id;
+			$existing = isset( $by_title[ $label ] ) ? $by_title[ $label ] : null;
+			if ( $existing ) {
+				$db_id = (int) $existing->db_id;
+				// Stuck Custom Link / wrong type → delete and recreate as Category.
+				$wrong = ( 'taxonomy' === ( $args['menu-item-type'] ?? '' ) )
+					&& ( 'taxonomy' !== (string) $existing->type || 'category' !== (string) $existing->object );
+				if ( $wrong ) {
+					wp_delete_post( $db_id, true );
+					$db_id = 0;
+				}
 			}
 
-			$item_id = wp_update_nav_menu_item( (int) $menu->term_id, $db_id, $args );
+			$item_id = wp_update_nav_menu_item( $menu_id, $db_id, $args );
 			if ( ! is_wp_error( $item_id ) ) {
+				altijara_force_nav_menu_item_meta( (int) $item_id, $args );
 				if ( $db_id ) {
 					++$report['updated'];
 				} else {
@@ -299,6 +352,165 @@ function altijara_sync_nav_menus_from_category_map() {
 			++$position;
 		}
 	}
+
+	return $report;
+}
+
+/**
+ * Ensure utility pages exist, then rebuild top-bar menu:
+ * من نحن · اتصل بنا · أعلن معنا → real Pages.
+ *
+ * @return array{menu_id:int,items:int,pages:array<string,mixed>,pending:string[]}
+ */
+function altijara_rebuild_utility_nav_menu() {
+	$report = array(
+		'menu_id' => 0,
+		'items'   => 0,
+		'pages'   => array(),
+		'pending' => array(),
+	);
+
+	if ( function_exists( 'altijara_ensure_utility_pages' ) ) {
+		$report['pages'] = altijara_ensure_utility_pages();
+	}
+
+	$menu_name = 'Altijara — الشريط العلوي';
+	$menu      = wp_get_nav_menu_object( $menu_name );
+	if ( ! $menu ) {
+		$created = wp_create_nav_menu( $menu_name );
+		if ( is_wp_error( $created ) ) {
+			$report['pending'][] = 'menu_create_failed';
+			return $report;
+		}
+		$menu_id = (int) $created;
+	} else {
+		$menu_id = (int) $menu->term_id;
+	}
+
+	$locations = get_nav_menu_locations();
+	if ( ! empty( $locations['top_bar'] ) ) {
+		$menu_id = (int) $locations['top_bar'];
+	} elseif ( ! empty( $locations['utility'] ) ) {
+		$menu_id = (int) $locations['utility'];
+	}
+	$report['menu_id'] = $menu_id;
+
+	$existing = wp_get_nav_menu_items( $menu_id );
+	if ( is_array( $existing ) ) {
+		foreach ( $existing as $item ) {
+			wp_delete_post( (int) $item->db_id, true );
+		}
+	}
+
+	$blueprint = function_exists( 'altijara_default_utility_nav_blueprint' )
+		? altijara_default_utility_nav_blueprint()
+		: array();
+	$position  = 1;
+	foreach ( $blueprint as $row ) {
+		$resolved = altijara_resolve_blueprint_item( $row );
+		if ( empty( $resolved['url'] ) ) {
+			$report['pending'][] = ( $row['label'] ?? '' ) . ' (' . ( $resolved['status'] ?? 'pending' ) . ')';
+			continue;
+		}
+		$args    = altijara_nav_menu_item_args( $row, $resolved, $position );
+		$item_id = wp_update_nav_menu_item( $menu_id, 0, $args );
+		if ( ! is_wp_error( $item_id ) ) {
+			altijara_force_nav_menu_item_meta( (int) $item_id, $args );
+			++$report['items'];
+			++$position;
+		}
+	}
+
+	$locs = get_theme_mod( 'nav_menu_locations' );
+	if ( ! is_array( $locs ) ) {
+		$locs = array();
+	}
+	$locs['top_bar'] = $menu_id;
+	$locs['utility'] = $menu_id;
+	set_theme_mod( 'nav_menu_locations', $locs );
+
+	return $report;
+}
+
+/**
+ * Wipe and rebuild the primary navbar from the full category blueprint
+ * (Home + all section categories + Issues) as real Category taxonomy links.
+ *
+ * @return array{menu_id:int,items:int,pending:string[]}
+ */
+function altijara_rebuild_primary_nav_menu() {
+	$report = array(
+		'menu_id' => 0,
+		'items'   => 0,
+		'pending' => array(),
+	);
+
+	if ( function_exists( 'altijara_detect_category_map' ) ) {
+		$map = altijara_detect_category_map( true );
+		altijara_update_options( array( 'category_map' => $map ) );
+	}
+
+	$cat_base = get_option( 'category_base' );
+	if ( '' === (string) $cat_base || '.' === (string) $cat_base ) {
+		update_option( 'category_base', 'category' );
+		flush_rewrite_rules( false );
+	}
+
+	$menu_name = 'Altijara — القائمة الرئيسية';
+	$menu      = wp_get_nav_menu_object( $menu_name );
+	if ( ! $menu ) {
+		$created = wp_create_nav_menu( $menu_name );
+		if ( is_wp_error( $created ) ) {
+			$report['pending'][] = 'menu_create_failed';
+			return $report;
+		}
+		$menu_id = (int) $created;
+	} else {
+		$menu_id = (int) $menu->term_id;
+	}
+	$report['menu_id'] = $menu_id;
+
+	// Prefer menu already assigned to primary (may be renamed).
+	$locations = get_nav_menu_locations();
+	if ( ! empty( $locations['primary'] ) ) {
+		$menu_id           = (int) $locations['primary'];
+		$report['menu_id'] = $menu_id;
+	}
+
+	$existing = wp_get_nav_menu_items( $menu_id );
+	if ( is_array( $existing ) ) {
+		foreach ( $existing as $item ) {
+			wp_delete_post( (int) $item->db_id, true );
+		}
+	}
+
+	$blueprint = function_exists( 'altijara_default_primary_nav_blueprint' )
+		? altijara_default_primary_nav_blueprint()
+		: array();
+	$position  = 1;
+	foreach ( $blueprint as $row ) {
+		$resolved = altijara_resolve_blueprint_item( $row );
+		if ( empty( $resolved['url'] ) ) {
+			$report['pending'][] = ( $row['label'] ?? '' ) . ' (' . ( $resolved['status'] ?? 'pending' ) . ')';
+			continue;
+		}
+		$args    = altijara_nav_menu_item_args( $row, $resolved, $position );
+		$item_id = wp_update_nav_menu_item( $menu_id, 0, $args );
+		if ( ! is_wp_error( $item_id ) ) {
+			altijara_force_nav_menu_item_meta( (int) $item_id, $args );
+			++$report['items'];
+			++$position;
+		}
+	}
+
+	// Force-assign to primary + mobile.
+	$locs = get_theme_mod( 'nav_menu_locations' );
+	if ( ! is_array( $locs ) ) {
+		$locs = array();
+	}
+	$locs['primary'] = $menu_id;
+	$locs['mobile']  = $menu_id;
+	set_theme_mod( 'nav_menu_locations', $locs );
 
 	return $report;
 }

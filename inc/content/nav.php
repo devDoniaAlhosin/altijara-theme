@@ -124,21 +124,83 @@ function altijara_resolve_menu_location( $location ) {
 }
 
 /**
- * Render primary header menu.
+ * Render primary nav from theme blueprint (Home + all post categories + Issues).
+ * Used when WP menu is empty or incomplete.
  */
-function altijara_render_primary_nav() {
-	$loc = altijara_resolve_menu_location( 'primary' );
-	if ( ! altijara_has_nav_menu( $loc ) && 'primary' === $loc ) {
+function altijara_render_primary_nav_from_blueprint() {
+	if ( ! function_exists( 'altijara_default_primary_nav_blueprint' ) || ! function_exists( 'altijara_resolve_blueprint_item' ) ) {
 		echo '<ul class="primary-nav-list" data-wp-menu="0"></ul>';
 		return;
 	}
+
+	$current_cat = is_category() ? (int) get_queried_object_id() : 0;
+	$is_home     = is_front_page() || is_home();
+	$is_issues   = function_exists( 'altijara_is_issues_archive_view' ) && altijara_is_issues_archive_view();
+	if ( ! $is_issues && ( is_post_type_archive( 'issue' ) || is_singular( 'issue' ) ) ) {
+		$is_issues = true;
+	}
+
+	echo '<ul class="primary-nav-list" data-wp-menu="1">';
+	foreach ( altijara_default_primary_nav_blueprint() as $row ) {
+		$resolved = altijara_resolve_blueprint_item( $row );
+		if ( empty( $resolved['url'] ) ) {
+			continue;
+		}
+		$label   = isset( $row['label'] ) ? (string) $row['label'] : '';
+		$type    = isset( $row['type'] ) ? (string) $row['type'] : '';
+		$classes = array( 'menu-item' );
+		if ( 'home' === $type && $is_home ) {
+			$classes[] = 'current-menu-item';
+			$classes[] = 'active';
+		} elseif ( 'issues' === $type && $is_issues ) {
+			$classes[] = 'current-menu-item';
+			$classes[] = 'active';
+		} elseif ( 'category_key' === $type && $current_cat && (int) ( $resolved['object_id'] ?? 0 ) === $current_cat ) {
+			$classes[] = 'current-menu-item';
+			$classes[] = 'active';
+		}
+		if ( 'taxonomy' === ( $resolved['type'] ?? '' ) ) {
+			$classes[] = 'menu-item-object-category';
+			$classes[] = 'menu-item-type-taxonomy';
+		}
+		printf(
+			'<li class="%1$s"><a href="%2$s">%3$s</a></li>',
+			esc_attr( implode( ' ', $classes ) ),
+			esc_url( $resolved['url'] ),
+			esc_html( $label )
+		);
+	}
+	echo '</ul>';
+}
+
+/**
+ * Render primary header menu.
+ */
+function altijara_render_primary_nav() {
+	$loc       = altijara_resolve_menu_location( 'primary' );
+	$blueprint = function_exists( 'altijara_default_primary_nav_blueprint' )
+		? altijara_default_primary_nav_blueprint()
+		: array();
+	$expected  = count( $blueprint );
+
+	$locations = get_nav_menu_locations();
+	$menu_id   = ( ! empty( $locations[ $loc ] ) ) ? (int) $locations[ $loc ] : 0;
+	$items     = $menu_id ? wp_get_nav_menu_items( $menu_id ) : array();
+	$count     = is_array( $items ) ? count( $items ) : 0;
+
+	// Incomplete WP menu (e.g. only a few Custom Links) → render full category navbar.
+	if ( $count < max( 10, (int) floor( $expected * 0.7 ) ) ) {
+		altijara_render_primary_nav_from_blueprint();
+		return;
+	}
+
 	wp_nav_menu(
 		array(
 			'theme_location' => $loc,
 			'container'      => false,
 			'menu_class'     => 'primary-nav-list',
 			'menu_id'        => '',
-			'fallback_cb'    => false,
+			'fallback_cb'    => 'altijara_render_primary_nav_from_blueprint',
 			'depth'          => 2,
 			'items_wrap'     => '<ul class="%2$s" data-wp-menu="1">%3$s</ul>',
 		)
@@ -146,20 +208,70 @@ function altijara_render_primary_nav() {
 }
 
 /**
- * Render top bar utility menu.
+ * Render top bar from blueprint: من نحن · اتصل بنا · أعلن معنا.
  */
-function altijara_render_top_bar_nav() {
-	$loc = altijara_resolve_menu_location( 'top_bar' );
-	if ( ! altijara_has_nav_menu( $loc ) ) {
+function altijara_render_top_bar_nav_from_blueprint() {
+	if ( ! function_exists( 'altijara_default_utility_nav_blueprint' ) || ! function_exists( 'altijara_resolve_blueprint_item' ) ) {
 		echo '<ul class="top-nav-links" data-wp-menu="0"></ul>';
 		return;
 	}
+
+	echo '<ul class="top-nav-links" data-wp-menu="1">';
+	foreach ( altijara_default_utility_nav_blueprint() as $row ) {
+		$resolved = altijara_resolve_blueprint_item( $row );
+		if ( empty( $resolved['url'] ) ) {
+			continue;
+		}
+		$slug    = isset( $row['slug'] ) ? (string) $row['slug'] : '';
+		$label   = isset( $row['label'] ) ? (string) $row['label'] : '';
+		$classes = array( 'menu-item' );
+		$current = false;
+		if ( $slug && is_page( $slug ) ) {
+			$current = true;
+		} elseif ( ! empty( $resolved['object_id'] ) && is_page( (int) $resolved['object_id'] ) ) {
+			$current = true;
+		}
+		if ( $current ) {
+			$classes[] = 'current-menu-item';
+			$classes[] = 'is-current';
+		}
+		printf(
+			'<li class="%1$s"><a href="%2$s"%3$s>%4$s</a></li>',
+			esc_attr( implode( ' ', $classes ) ),
+			esc_url( $resolved['url'] ),
+			$current ? ' class="is-current"' : '',
+			esc_html( $label )
+		);
+	}
+	echo '</ul>';
+}
+
+/**
+ * Render top bar utility menu.
+ */
+function altijara_render_top_bar_nav() {
+	$loc       = altijara_resolve_menu_location( 'top_bar' );
+	$blueprint = function_exists( 'altijara_default_utility_nav_blueprint' )
+		? altijara_default_utility_nav_blueprint()
+		: array();
+	$expected  = count( $blueprint );
+
+	$locations = get_nav_menu_locations();
+	$menu_id   = ( ! empty( $locations[ $loc ] ) ) ? (int) $locations[ $loc ] : 0;
+	$items     = $menu_id ? wp_get_nav_menu_items( $menu_id ) : array();
+	$count     = is_array( $items ) ? count( $items ) : 0;
+
+	if ( $count < $expected ) {
+		altijara_render_top_bar_nav_from_blueprint();
+		return;
+	}
+
 	wp_nav_menu(
 		array(
 			'theme_location' => $loc,
 			'container'      => false,
 			'menu_class'     => 'top-nav-links',
-			'fallback_cb'    => false,
+			'fallback_cb'    => 'altijara_render_top_bar_nav_from_blueprint',
 			'depth'          => 1,
 			'items_wrap'     => '<ul class="%2$s" data-wp-menu="1">%3$s</ul>',
 		)

@@ -271,10 +271,13 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 					</tbody>
 				</table>
 				<p class="altijara-admin-actions">
-					<button type="submit" name="altijara_sync_nav_categories" class="button button-primary" value="1"><?php esc_html_e( 'Sync menu → category URLs', 'altijara' ); ?></button>
+					<button type="submit" name="altijara_rebuild_primary_nav" class="button button-primary" value="1"><?php esc_html_e( 'Rebuild primary navbar (all categories)', 'altijara' ); ?></button>
+					<button type="submit" name="altijara_rebuild_utility_nav" class="button button-primary" value="1"><?php esc_html_e( 'Rebuild top bar (About / Contact / Advertise)', 'altijara' ); ?></button>
+					<button type="submit" name="altijara_sync_nav_categories" class="button" value="1"><?php esc_html_e( 'Sync menu → category URLs', 'altijara' ); ?></button>
 					<a class="button" href="<?php echo esc_url( admin_url( 'nav-menus.php' ) ); ?>"><?php esc_html_e( 'Open Menus editor', 'altijara' ); ?></a>
 					<a class="button" href="<?php echo esc_url( admin_url( 'nav-menus.php?action=locations' ) ); ?>"><?php esc_html_e( 'Manage locations', 'altijara' ); ?></a>
 				</p>
+				<p class="description"><?php esc_html_e( 'Primary: category archives. Top bar: من نحن → /about/ · اتصل بنا → /contact/ · أعلن معنا → /advertise/ (creates pages if missing).', 'altijara' ); ?></p>
 
 			<?php elseif ( 'homepage' === $id ) : ?>
 				<p class="description"><?php esc_html_e( 'Build the homepage like WPBakery: edit the fixed Hero grid, then add Cards or Blocks below and drag to reorder.', 'altijara' ); ?></p>

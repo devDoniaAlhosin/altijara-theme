@@ -170,6 +170,35 @@ function altijara_handle_settings_save() {
 				echo '<div class="notice notice-warning"><p>' . esc_html__( 'Some items still pending (category not mapped):', 'altijara' ) . ' ' . esc_html( implode( ', ', $sync['pending'] ) ) . '</p></div>';
 			}
 		}
+		if ( ! empty( $_POST['altijara_rebuild_primary_nav'] ) && function_exists( 'altijara_rebuild_primary_nav_menu' ) ) {
+			$built = altijara_rebuild_primary_nav_menu();
+			echo '<div class="notice notice-success"><p>' . esc_html(
+				sprintf(
+					/* translators: %d: number of menu items created */
+					__( 'Primary navbar rebuilt with %d items (all post categories).', 'altijara' ),
+					(int) ( $built['items'] ?? 0 )
+				)
+			) . '</p></div>';
+			if ( ! empty( $built['pending'] ) && is_array( $built['pending'] ) ) {
+				echo '<div class="notice notice-warning"><p>' . esc_html__( 'Skipped (category not found on site):', 'altijara' ) . ' ' . esc_html( implode( ', ', $built['pending'] ) ) . '</p></div>';
+			}
+		}
+		if ( ! empty( $_POST['altijara_rebuild_utility_nav'] ) && function_exists( 'altijara_rebuild_utility_nav_menu' ) ) {
+			$built = altijara_rebuild_utility_nav_menu();
+			$pages = isset( $built['pages'] ) && is_array( $built['pages'] ) ? $built['pages'] : array();
+			echo '<div class="notice notice-success"><p>' . esc_html(
+				sprintf(
+					/* translators: 1: menu items, 2: pages created, 3: pages existed */
+					__( 'Top bar rebuilt (%1$d links). Utility pages: %2$d created, %3$d already existed.', 'altijara' ),
+					(int) ( $built['items'] ?? 0 ),
+					(int) ( $pages['created'] ?? 0 ),
+					(int) ( $pages['existed'] ?? 0 )
+				)
+			) . '</p></div>';
+			if ( ! empty( $built['pending'] ) && is_array( $built['pending'] ) ) {
+				echo '<div class="notice notice-warning"><p>' . esc_html__( 'Pending:', 'altijara' ) . ' ' . esc_html( implode( ', ', $built['pending'] ) ) . '</p></div>';
+			}
+		}
 		if ( isset( $_POST['altijara_archive_layouts'] ) && is_array( $_POST['altijara_archive_layouts'] ) && function_exists( 'altijara_sanitize_archive_layouts' ) ) {
 			$layouts = altijara_sanitize_archive_layouts( wp_unslash( $_POST['altijara_archive_layouts'] ) ); // phpcs:ignore
 			$full_hero = array();

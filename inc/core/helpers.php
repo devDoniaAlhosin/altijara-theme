@@ -24,13 +24,24 @@ function altijara_asset( $path ) {
  * @return array<string, string>
  */
 function altijara_theme_urls() {
+	$page_url = static function ( $slug, $fallback_path ) {
+		$page = get_page_by_path( $slug );
+		if ( $page instanceof WP_Post ) {
+			$link = get_permalink( $page );
+			if ( $link && ! is_wp_error( $link ) ) {
+				return $link;
+			}
+		}
+		return home_url( $fallback_path );
+	};
+
 	return array(
 		'home'      => home_url( '/' ),
-		'about'     => home_url( '/about/' ),
-		'contact'   => home_url( '/contact/' ),
-		'advertise' => home_url( '/advertise/' ),
-		'subscribe' => home_url( '/subscribe/' ),
-		'login'     => home_url( '/login/' ),
+		'about'     => $page_url( 'about', '/about/' ),
+		'contact'   => $page_url( 'contact', '/contact/' ),
+		'advertise' => $page_url( 'advertise', '/advertise/' ),
+		'subscribe' => $page_url( 'subscribe', '/subscribe/' ),
+		'login'     => $page_url( 'login', '/login/' ),
 		'issues'    => get_post_type_archive_link( 'issue' ) ?: home_url( '/issues/' ),
 		'rest'      => esc_url_raw( rest_url( 'wp/v2' ) ),
 		'theme'     => ALTIJARA_THEME_URI,
