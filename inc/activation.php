@@ -214,6 +214,71 @@ function altijara_default_footer_sections_blueprint() {
 }
 
 /**
+ * Ensure utility pages exist with matching templates (idempotent).
+ *
+ * @return array{created:int,existed:int,template_set:int,errors:string[],details:array<string,string>}
+ */
+function altijara_ensure_utility_pages() {
+	$report = array(
+		'created'      => 0,
+		'existed'      => 0,
+		'template_set' => 0,
+		'errors'       => array(),
+		'details'      => array(),
+	);
+
+	if ( ! function_exists( 'altijara_default_utility_pages_blueprint' ) ) {
+		return $report;
+	}
+
+	foreach ( altijara_default_utility_pages_blueprint() as $row ) {
+		$slug     = sanitize_title( $row['slug'] ?? '' );
+		$title    = isset( $row['title'] ) ? (string) $row['title'] : $slug;
+		$template = isset( $row['template'] ) ? sanitize_file_name( $row['template'] ) : '';
+		if ( ! $slug || ! $template ) {
+			continue;
+		}
+
+		$page = get_page_by_path( $slug );
+		if ( $page instanceof WP_Post ) {
+			++$report['existed'];
+			$report['details'][ $slug ] = 'existed';
+			$current = (string) get_post_meta( $page->ID, '_wp_page_template', true );
+			if ( '' === $current || 'default' === $current ) {
+				update_post_meta( $page->ID, '_wp_page_template', $template );
+				++$report['template_set'];
+				$report['details'][ $slug ] = 'existed_template_set';
+			}
+			continue;
+		}
+
+		$page_id = wp_insert_post(
+			array(
+				'post_title'  => $title,
+				'post_name'   => $slug,
+				'post_status' => 'publish',
+				'post_type'   => 'page',
+				'post_content' => '',
+			),
+			true
+		);
+
+		if ( is_wp_error( $page_id ) ) {
+			$report['errors'][]         = $slug . ': ' . $page_id->get_error_message();
+			$report['details'][ $slug ] = 'error';
+			continue;
+		}
+
+		update_post_meta( (int) $page_id, '_wp_page_template', $template );
+		++$report['created'];
+		++$report['template_set'];
+		$report['details'][ $slug ] = 'created';
+	}
+
+	return $report;
+}
+
+/**
  * Run activation setup (idempotent).
  *
  * @return array<string, mixed> Report.
@@ -221,6 +286,7 @@ function altijara_default_footer_sections_blueprint() {
 function altijara_run_theme_setup() {
 	$report = array(
 		'options' => 'skipped',
+		'pages'   => array(),
 		'menus'   => array(),
 		'pending' => array(),
 		'flush'   => false,
@@ -241,7 +307,20 @@ function altijara_run_theme_setup() {
 		$report['options'] = 'merged_missing';
 	}
 
-	// 2) Menus.
+	// 2) Utility pages (before menus so page_slug items resolve to real pages).
+	$report['pages'] = altijara_ensure_utility_pages();
+	if ( ! empty( $report['pages']['errors'] ) && is_array( $report['pages']['errors'] ) ) {
+		$report['pending'] = array_merge( $report['pending'], $report['pages']['errors'] );
+	}
+
+	// 2b) Seed category map from live terms when present.
+	if ( function_exists( 'altijara_detect_category_map' ) ) {
+		$map = altijara_detect_category_map( true );
+		altijara_update_options( array( 'category_map' => $map ) );
+		$report['category_map'] = 'detected';
+	}
+
+	// 3) Menus.
 	$menus = array(
 		array(
 			'name'      => 'Altijara — القائمة الرئيسية',
@@ -289,7 +368,7 @@ function altijara_run_theme_setup() {
 		$report['pending'] = array_merge( $report['pending'], $result['pending'] );
 	}
 
-	// 3) Flush rewrites once per setup version (issue CPT archive).
+	// 4) Flush rewrites once per setup version (issue CPT archive).
 	$state = get_option( ALTIJARA_SETUP_FLAG, array() );
 	if ( ! is_array( $state ) ) {
 		$state = array();
@@ -338,6 +417,9 @@ function altijara_setup_admin_notice() {
 			++$skipped;
 		}
 	}
+	$pages          = isset( $report['pages'] ) && is_array( $report['pages'] ) ? $report['pages'] : array();
+	$pages_created  = isset( $pages['created'] ) ? (int) $pages['created'] : 0;
+	$pages_existed  = isset( $pages['existed'] ) ? (int) $pages['existed'] : 0;
 	$options_status = isset( $report['options'] ) && is_scalar( $report['options'] ) ? (string) $report['options'] : '—';
 	$pending        = isset( $report['pending'] ) && is_array( $report['pending'] ) ? $report['pending'] : array();
 	?>
@@ -346,9 +428,11 @@ function altijara_setup_admin_notice() {
 		<p>
 			<?php
 			printf(
-				/* translators: 1: options status, 2: menus created/updated, 3: skipped */
-				esc_html__( 'الإعدادات: %1$s · قوائم محدّثة: %2$d · قوائم موجودة (تم التخطي): %3$d', 'altijara' ),
+				/* translators: 1: options status, 2: pages created, 3: pages existed, 4: menus updated, 5: menus skipped */
+				esc_html__( 'الإعدادات: %1$s · صفحات جديدة: %2$d · صفحات موجودة: %3$d · قوائم محدّثة: %4$d · قوائم موجودة (تم التخطي): %5$d', 'altijara' ),
 				esc_html( $options_status ),
+				$pages_created,
+				$pages_existed,
 				(int) $created,
 				(int) $skipped
 			);
@@ -363,6 +447,8 @@ function altijara_setup_admin_notice() {
 			</ul>
 		<?php endif; ?>
 		<p>
+			<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=page' ) ); ?>"><?php esc_html_e( 'عرض الصفحات', 'altijara' ); ?></a>
+			|
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=altijara-theme' ) ); ?>"><?php esc_html_e( 'فتح إعدادات القالب', 'altijara' ); ?></a>
 			|
 			<a href="<?php echo esc_url( admin_url( 'nav-menus.php' ) ); ?>"><?php esc_html_e( 'تحرير القوائم', 'altijara' ); ?></a>

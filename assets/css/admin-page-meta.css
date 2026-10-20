@@ -1,0 +1,275 @@
+/* Altijara — Page Settings meta box
+   Scoped under #altijara_page_settings for block-editor specificity. */
+
+#altijara_page_settings .inside {
+  margin: 0;
+  padding: 12px;
+}
+
+#altijara_page_settings .altijara-page-meta,
+.altijara-page-meta {
+  max-width: 960px;
+  margin: 0;
+  padding: 0;
+}
+
+.altijara-pm-empty {
+  padding: 8px 4px 4px;
+}
+
+#altijara_page_settings .altijara-pm-toolbar,
+.altijara-pm-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #1a222d 0%, #262a33 55%, #1897b8 160%);
+  color: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 0 0 14px;
+}
+
+.altijara-pm-toolbar__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.altijara-pm-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.altijara-pm-toolbar__help {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 640px;
+}
+
+.altijara-pm-view.button {
+  flex-shrink: 0;
+  background: #fff;
+  border-color: #fff;
+  color: #1a222d;
+  font-weight: 600;
+}
+
+.altijara-pm-view.button:hover {
+  background: #f0f6fc;
+  border-color: #f0f6fc;
+  color: #1897b8;
+}
+
+/* Accordion sections */
+#altijara_page_settings .altijara-pm-section,
+.altijara-pm-section {
+  border: 1px solid #dcdcde;
+  border-radius: 10px;
+  background: #fff;
+  margin: 0 0 10px;
+  overflow: hidden;
+}
+
+#altijara_page_settings .altijara-pm-section__toggle,
+.altijara-pm-section__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 0;
+  background: #f6f7f7;
+  cursor: pointer;
+  text-align: start;
+}
+
+.altijara-pm-section__toggle:hover {
+  background: #eef5f8;
+}
+
+.altijara-pm-section.is-open .altijara-pm-section__toggle {
+  background: #e8f4f8;
+  border-bottom: 1px solid #d5e8ef;
+}
+
+.altijara-pm-section__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a222d;
+}
+
+.altijara-pm-section__chevron {
+  color: #1897b8;
+  transition: transform 0.15s ease;
+}
+
+.altijara-pm-section.is-open .altijara-pm-section__chevron {
+  transform: rotate(180deg);
+}
+
+#altijara_page_settings .altijara-pm-section__body,
+.altijara-pm-section__body {
+  display: none;
+  padding: 14px 14px 6px;
+}
+
+#altijara_page_settings .altijara-pm-section.is-open .altijara-pm-section__body,
+.altijara-pm-section.is-open .altijara-pm-section__body {
+  display: block;
+}
+
+/* Fields */
+.altijara-pm-field {
+  margin: 0 0 12px;
+}
+
+.altijara-pm-field > label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.altijara-pm-field .description {
+  margin: 4px 0 0;
+}
+
+.altijara-pm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+
+@media (max-width: 782px) {
+  .altijara-pm-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Media field */
+.altijara-pm-media {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.altijara-pm-media-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Repeaters */
+.altijara-pm-repeater {
+  margin: 4px 0 14px;
+}
+
+.altijara-pm-repeater__label {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #1a222d;
+}
+
+.altijara-pm-row {
+  background: #f6f7f7;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  padding: 10px 12px 2px;
+  margin: 0 0 10px;
+}
+
+.altijara-pm-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.altijara-pm-row-title {
+  font-size: 12px;
+}
+
+.altijara-pm-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.altijara-pm-row-actions .button-link {
+  text-decoration: none;
+  font-weight: 700;
+  color: #50575e;
+}
+
+.altijara-pm-row-actions .button-link:hover {
+  color: #1897b8;
+}
+
+.altijara-pm-row-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+
+.altijara-pm-row-fields .altijara-pm-field:has(textarea),
+.altijara-pm-row-fields .altijara-pm-field:has(select) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 782px) {
+  .altijara-pm-row-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.altijara-pm-add {
+  margin-top: 2px !important;
+}
+
+/* Hide unused block/classic content editor on utility templates (keep title + featured image) */
+body.altijara-utility-page-edit #postdivrich,
+body.altijara-utility-page-edit .block-editor-block-list__layout > .wp-block:not(.wp-block-post-title),
+body.altijara-utility-page-edit .block-editor-block-list__layout > .block-list-appender,
+body.altijara-utility-page-edit .edit-post-visual-editor .block-list-appender,
+body.altijara-utility-page-edit .editor-styles-wrapper .is-root-container > .block-list-appender,
+body.altijara-utility-page-edit .edit-post-visual-editor__post-title-wrapper ~ .is-root-container {
+  display: none !important;
+}
+
+body.altijara-utility-page-edit .edit-post-visual-editor {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+body.altijara-utility-page-edit .edit-post-layout__metaboxes {
+  margin-top: 0;
+}
+
+body.altijara-utility-page-edit .editor-styles-wrapper {
+  padding-bottom: 8px !important;
+}
+
+.altijara-pm-editor-notice {
+  margin: 12px 16px 0;
+  padding: 10px 14px;
+  background: #e8f4f8;
+  border: 1px solid #b8dce8;
+  border-inline-start: 4px solid #1897b8;
+  border-radius: 6px;
+  color: #1a222d;
+  font-size: 13px;
+  line-height: 1.45;
+}

@@ -15,13 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 function altijara_register_nav_menus() {
 	register_nav_menus(
 		array(
-			'primary'      => __( 'القائمة الرئيسية (الهيدر)', 'altijara' ),
-			'top_bar'      => __( 'شريط الروابط العلوي', 'altijara' ),
-			'mobile'       => __( 'قائمة الجوال', 'altijara' ),
-			'footer'       => __( 'قائمة أقسام التذييل', 'altijara' ),
-			'footer_quick' => __( 'روابط تهمك (التذييل)', 'altijara' ),
+			'primary'      => __( 'Primary Menu (Header)', 'altijara' ),
+			'top_bar'      => __( 'Top Bar Links', 'altijara' ),
+			'mobile'       => __( 'Mobile Menu', 'altijara' ),
+			'footer'       => __( 'Footer Sections', 'altijara' ),
+			'footer_quick' => __( 'Footer Quick Links', 'altijara' ),
 			// Legacy alias used in older setup.php — keep for BC.
-			'utility'      => __( 'شريط الروابط العلوي (قديم)', 'altijara' ),
+			'utility'      => __( 'Top Bar Links (Legacy)', 'altijara' ),
 		)
 	);
 }

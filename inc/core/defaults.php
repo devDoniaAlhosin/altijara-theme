@@ -18,7 +18,6 @@ function altijara_default_options() {
 	$logo_default = 'https://altijaramagazine.com/wp-content/uploads/2026/09/Asset-1@4x.png';
 	$logo_hover   = 'https://altijaramagazine.com/wp-content/uploads/2026/09/Logo-%D8%A3%D8%B2%D8%B1%D9%82.png';
 	$logo_footer  = 'https://altijaramagazine.com/wp-content/uploads/2026/09/Asset-14@4x.png';
-	$ad_default   = 'https://altijaramagazine.com/wp-content/uploads/angwp/items/29873/728-x90.png';
 
 	return array(
 		'general'      => array(
@@ -51,7 +50,8 @@ function altijara_default_options() {
 			'sticky'              => false,
 			'show_top_bar'        => true,
 			'top_bar_text'        => '',
-			'ad_image'            => $ad_default,
+			'ad_shortcode'        => '',
+			'ad_image'            => '',
 			'ad_url'              => '',
 			'show_search'         => true,
 			'show_login'          => true,
@@ -152,7 +152,7 @@ function altijara_default_options() {
 		'advanced'     => array(
 			'cache_ttl' => 900,
 		),
-		'category_map' => array(
+		'category_map'   => array(
 			'chamber'     => 'chamber',
 			'exhibitions' => 'exhibitions',
 			'followups'   => 'followups',
@@ -168,7 +168,9 @@ function altijara_default_options() {
 			'tourism'     => 'tourism',
 			'misc'        => 'misc',
 		),
-		'sections'     => array(),
+		'sections'        => array(),
+		// sections_order omitted from defaults — only stored after Homepage save.
+		'archive_layouts' => array(),
 	);
 }
 
@@ -242,6 +244,41 @@ function altijara_default_primary_nav_blueprint() {
 		'label' => 'أعداد المجلة',
 	);
 	return $items;
+}
+
+/**
+ * Utility pages created on theme activation (slug → title + template).
+ *
+ * @return array<int, array{slug:string,title:string,template:string}>
+ */
+function altijara_default_utility_pages_blueprint() {
+	return array(
+		array(
+			'slug'     => 'about',
+			'title'    => 'من نحن',
+			'template' => 'page-about.php',
+		),
+		array(
+			'slug'     => 'contact',
+			'title'    => 'اتصل بنا',
+			'template' => 'page-contact.php',
+		),
+		array(
+			'slug'     => 'advertise',
+			'title'    => 'أعلن معنا',
+			'template' => 'page-advertise.php',
+		),
+		array(
+			'slug'     => 'subscribe',
+			'title'    => 'اشترك',
+			'template' => 'page-subscribe.php',
+		),
+		array(
+			'slug'     => 'login',
+			'title'    => 'تسجيل الدخول',
+			'template' => 'page-login.php',
+		),
+	);
 }
 
 /**

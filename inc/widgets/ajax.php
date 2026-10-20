@@ -64,23 +64,14 @@ function altijara_admin_enqueue_section_manager( $hook_suffix ) {
 	if ( 'toplevel_page_altijara-theme' !== $hook_suffix ) {
 		return;
 	}
-	$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( 'homepage' !== $tab ) {
-		return;
-	}
+	/* Homepage panel is always in the SPA DOM — load picker on every theme settings view. */
 
-	wp_enqueue_style(
-		'altijara-admin-sections',
-		altijara_asset( 'assets/css/admin-sections.css' ),
-		array(),
-		ALTIJARA_THEME_VERSION
-	);
-
+	$js = ALTIJARA_THEME_DIR . '/assets/js/admin/section-manager.js';
 	wp_enqueue_script(
 		'altijara-admin-sections',
 		altijara_asset( 'assets/js/admin/section-manager.js' ),
 		array(),
-		ALTIJARA_THEME_VERSION,
+		file_exists( $js ) ? (string) filemtime( $js ) : ALTIJARA_THEME_VERSION,
 		true
 	);
 
@@ -94,6 +85,7 @@ function altijara_admin_enqueue_section_manager( $hook_suffix ) {
 				'searchPlaceholder' => __( 'ابحث عن مقال بالعنوان…', 'altijara' ),
 				'noResults'         => __( 'لا نتائج', 'altijara' ),
 				'remove'            => __( 'إزالة', 'altijara' ),
+				'removeSection'     => __( 'Remove this section?', 'altijara' ),
 			),
 		)
 	);

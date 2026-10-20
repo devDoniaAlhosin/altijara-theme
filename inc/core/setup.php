@@ -29,7 +29,7 @@ function altijara_theme_setup() {
 		'flex-width'  => true,
 	) );
 
-	// Menu locations registered in inc/nav.php (primary, top_bar, mobile, footer, footer_quick).
+	// Menu locations registered in inc/content/nav.php (primary, top_bar, mobile, footer, footer_quick).
 
 	add_image_size( 'altijara-card', 640, 400, true );
 	add_image_size( 'altijara-hero', 1200, 675, true );
@@ -71,7 +71,7 @@ add_action( 'init', 'altijara_register_issue_cpt' );
  * @return string[]
  */
 function altijara_body_classes( $classes ) {
-	if ( is_page_template( 'page-issues.php' ) || is_post_type_archive( 'issue' ) ) {
+	if ( is_page_template( 'page-issues.php' ) || is_post_type_archive( 'issue' ) || ( function_exists( 'altijara_is_issues_archive_view' ) && altijara_is_issues_archive_view() ) ) {
 		$classes[] = 'issues-page-body';
 	}
 	if ( is_front_page() || is_category() ) {

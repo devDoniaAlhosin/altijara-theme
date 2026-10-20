@@ -41,7 +41,7 @@ function altijara_enqueue_assets() {
 	// Site chrome early — fills nav after PHP header is present.
 	wp_enqueue_script(
 		'altijara-site-chrome',
-		altijara_asset( 'assets/js/site-chrome.js' ),
+		altijara_asset( 'assets/js/chrome/site-chrome.js' ),
 		array(),
 		$ver,
 		array(
@@ -71,7 +71,7 @@ function altijara_enqueue_assets() {
 
 	wp_enqueue_script(
 		'altijara-wp-api',
-		altijara_asset( 'assets/js/wp-api.js' ),
+		altijara_asset( 'assets/js/shared/wp-api.js' ),
 		array(),
 		$ver,
 		array(
@@ -83,7 +83,7 @@ function altijara_enqueue_assets() {
 	if ( is_front_page() ) {
 		wp_enqueue_script(
 			'altijara-app',
-			altijara_asset( 'assets/js/app.js' ),
+			altijara_asset( 'assets/js/home/app.js' ),
 			array( 'altijara-wp-api', 'altijara-site-chrome' ),
 			$ver,
 			array(
@@ -103,10 +103,12 @@ function altijara_enqueue_assets() {
 		);
 	}
 
-	if ( is_category() ) {
+	$issues_view = function_exists( 'altijara_is_issues_archive_view' ) && altijara_is_issues_archive_view();
+
+	if ( is_category() && ! $issues_view ) {
 		wp_enqueue_script(
 			'altijara-issues-recent',
-			altijara_asset( 'assets/js/issues-recent.js' ),
+			altijara_asset( 'assets/js/issues/issues-recent.js' ),
 			array(),
 			$ver,
 			array(
@@ -116,7 +118,7 @@ function altijara_enqueue_assets() {
 		);
 		wp_enqueue_script(
 			'altijara-category',
-			altijara_asset( 'assets/js/category.js' ),
+			altijara_asset( 'assets/js/category/category.js' ),
 			array( 'altijara-wp-api', 'altijara-issues-recent' ),
 			$ver,
 			array(
@@ -129,7 +131,7 @@ function altijara_enqueue_assets() {
 	if ( is_singular( 'post' ) ) {
 		wp_enqueue_script(
 			'altijara-issues-recent',
-			altijara_asset( 'assets/js/issues-recent.js' ),
+			altijara_asset( 'assets/js/issues/issues-recent.js' ),
 			array(),
 			$ver,
 			array(
@@ -139,7 +141,7 @@ function altijara_enqueue_assets() {
 		);
 		wp_enqueue_script(
 			'altijara-article',
-			altijara_asset( 'assets/js/article.js' ),
+			altijara_asset( 'assets/js/article/article.js' ),
 			array( 'altijara-wp-api', 'altijara-issues-recent', 'altijara-site-chrome' ),
 			$ver,
 			array(
@@ -158,16 +160,28 @@ function altijara_enqueue_assets() {
 		);
 	}
 
-	if ( is_post_type_archive( 'issue' ) || is_singular( 'issue' ) || is_page_template( 'page-issues.php' ) ) {
+	if ( $issues_view || is_singular( 'issue' ) ) {
+		$js_path = ALTIJARA_THEME_DIR . '/assets/js/issues/issues-archive.js';
 		wp_enqueue_script(
-			'altijara-issues',
-			altijara_asset( 'assets/js/issues.js' ),
+			'altijara-issues-archive',
+			altijara_asset( 'assets/js/issues/issues-archive.js' ),
 			array(),
-			$ver,
+			file_exists( $js_path ) ? (string) filemtime( $js_path ) : $ver,
 			array(
 				'in_footer' => true,
 				'strategy'  => 'defer',
 			)
+		);
+		$payload = array();
+		if ( function_exists( 'altijara_get_issue_posts' ) && function_exists( 'altijara_issue_to_js_payload' ) ) {
+			foreach ( altijara_get_issue_posts( 48, 0 ) as $issue_post ) {
+				$payload[] = altijara_issue_to_js_payload( $issue_post );
+			}
+		}
+		wp_localize_script(
+			'altijara-issues-archive',
+			'AltijaraIssuesPayload',
+			$payload
 		);
 	}
 }

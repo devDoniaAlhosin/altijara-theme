@@ -12,6 +12,7 @@ $header  = altijara_get_option( 'header', array() );
 $urls    = altijara_theme_urls();
 $logo    = ! empty( $header['logo_url'] ) ? $header['logo_url'] : '';
 $logo_h  = ! empty( $header['logo_hover_url'] ) ? $header['logo_hover_url'] : $logo;
+$ad_sc   = ! empty( $header['ad_shortcode'] ) ? trim( (string) $header['ad_shortcode'] ) : '';
 $ad_img  = ! empty( $header['ad_image'] ) ? $header['ad_image'] : '';
 $ad_url  = ! empty( $header['ad_url'] ) ? $header['ad_url'] : ( $urls['advertise'] ?? home_url( '/advertise/' ) );
 $login_u = ! empty( $header['login_url'] ) ? $header['login_url'] : ( $urls['login'] ?? home_url( '/login/' ) );
@@ -71,13 +72,22 @@ $header_class = 'main-header' . ( $sticky ? ' is-sticky-header' : '' );
 		<?php endif; ?>
 	  </a>
 	</div>
-	<?php if ( $ad_img ) : ?>
-	<div class="header-sponsor-banner">
-	  <a href="<?php echo esc_url( $ad_url ); ?>" class="sponsor-banner-img-link">
-		<img src="<?php echo esc_url( $ad_img ); ?>" alt="<?php esc_attr_e( 'إعلان مجلة التجارة', 'altijara' ); ?>" class="header-ad-img">
-	  </a>
+	<div class="header-sponsor-banner" data-ad-slot="header-billboard">
+	  <?php if ( $ad_sc ) : ?>
+		<div class="header-ad-shortcode">
+		  <?php echo do_shortcode( $ad_sc ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ad plugin shortcode HTML ?>
+		</div>
+	  <?php elseif ( $ad_img ) : ?>
+		<a href="<?php echo esc_url( $ad_url ); ?>" class="sponsor-banner-img-link">
+		  <img src="<?php echo esc_url( $ad_img ); ?>" alt="<?php esc_attr_e( 'إعلان مجلة التجارة', 'altijara' ); ?>" class="header-ad-img">
+		</a>
+	  <?php else : ?>
+		<div class="header-ad-placeholder" aria-label="<?php esc_attr_e( 'Advertisement', 'altijara' ); ?>">
+		  <span class="header-ad-placeholder__label"><?php esc_html_e( 'Advertisement', 'altijara' ); ?></span>
+		  <span class="header-ad-placeholder__size">728 × 90</span>
+		</div>
+	  <?php endif; ?>
 	</div>
-	<?php endif; ?>
 	<div class="header-actions o-header__top-column o-header__top-column--right">
 	  <?php if ( ! empty( $header['show_search'] ) ) : ?>
 	  <button class="header-search-btn o-header__top-icon-link--search<?php echo empty( $header['mobile_show_search'] ) ? ' hide-on-mobile' : ''; ?>" id="headerSearchBtn" aria-label="<?php esc_attr_e( 'بحث في الموقع', 'altijara' ); ?>" title="<?php esc_attr_e( 'بحث', 'altijara' ); ?>" type="button">

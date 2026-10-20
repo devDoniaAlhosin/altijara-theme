@@ -120,9 +120,9 @@ Theme provides branded shells for login, subscribe, advertise, about, and contac
 
 ## Theme performance design
 
-- **Assets:** Versioned enqueue via `inc/enqueue.php`; unified CSS + deferred Vanilla JS modules under `assets/`
+- **Assets:** Versioned enqueue via `inc/core/enqueue.php`; unified CSS + feature-folder Vanilla JS under `assets/js/`
 - **Fonts:** Self-hosted WOFF2 (design tokens / Design tab in Theme Options)
-- **Queries:** Shared helpers and caching in `inc/queries.php`, `inc/caching.php`
+- **Queries:** Shared helpers and caching in `inc/content/queries.php`, `inc/core/caching.php`
 - **Images:** Featured images, lazy-load, srcset/fallbacks via media helpers and card components
 - **Targets (site + theme):** Sub-400ms TTFB and 90+ mobile PageSpeed when paired with LiteSpeed / Redis / optimized media — theme keeps payload lean so those targets are achievable
 
