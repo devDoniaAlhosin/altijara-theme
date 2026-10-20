@@ -143,6 +143,64 @@ function altijara_get_primary_category_name( $post_id ) {
 }
 
 /**
+ * Render category/article sidebar ad slot.
+ * Priority: shortcode → dedicated image → header billboard image → empty placeholder.
+ */
+function altijara_render_sidebar_ad() {
+	$ad = altijara_get_option( 'advertising', array() );
+	if ( ! is_array( $ad ) || empty( $ad['sidebar_enabled'] ) ) {
+		return;
+	}
+
+	$shortcode = isset( $ad['sidebar_shortcode'] ) ? trim( (string) $ad['sidebar_shortcode'] ) : '';
+	$image     = isset( $ad['sidebar_image'] ) ? (string) $ad['sidebar_image'] : '';
+	$url       = isset( $ad['sidebar_url'] ) ? (string) $ad['sidebar_url'] : '';
+	$fallback  = 'https://altijaramagazine.com/wp-content/uploads/angwp/items/31121/%D8%AE%D8%AF%D9%85%D8%A7%D8%AA%20%D9%85%D9%8F%D8%AA%D9%85%D9%8A%D8%B2%D8%A9_%20300x600%20copy.png';
+
+	if ( ! $image || ! $url ) {
+		$header = altijara_get_option( 'header', array() );
+		if ( is_array( $header ) ) {
+			if ( ! $image && ! empty( $header['ad_image'] ) ) {
+				$image = (string) $header['ad_image'];
+			}
+			if ( ! $url && ! empty( $header['ad_url'] ) ) {
+				$url = (string) $header['ad_url'];
+			}
+		}
+	}
+	if ( ! $image ) {
+		$image = $fallback;
+	}
+	?>
+	<div class="cat-sidebar-ad-widget" data-ad-slot="sidebar">
+		<div class="cat-sidebar-ad-label">
+			<span><?php esc_html_e( 'مساحة إعلانية', 'altijara' ); ?></span>
+			<span class="cat-sidebar-ad-badge">Ad</span>
+		</div>
+		<?php if ( $shortcode ) : ?>
+			<div class="cat-sidebar-ad-shortcode">
+				<?php echo do_shortcode( $shortcode ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ad plugin shortcode HTML ?>
+			</div>
+		<?php elseif ( $image ) : ?>
+			<?php if ( $url ) : ?>
+				<a class="cat-sidebar-ad-link" href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener sponsored">
+					<img class="cat-sidebar-ad-img" src="<?php echo esc_url( $image ); ?>" alt="" loading="lazy">
+				</a>
+			<?php else : ?>
+				<span class="cat-sidebar-ad-link">
+					<img class="cat-sidebar-ad-img" src="<?php echo esc_url( $image ); ?>" alt="" loading="lazy">
+				</span>
+			<?php endif; ?>
+		<?php else : ?>
+			<div class="cat-sidebar-ad-placeholder" aria-hidden="true">
+				<span><?php esc_html_e( 'مساحة إعلانية', 'altijara' ); ?></span>
+			</div>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
+/**
  * Normalize a post into a simple array for templates/JS bridges.
  *
  * @param WP_Post|int $post Post object or ID.

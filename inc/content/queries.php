@@ -36,11 +36,29 @@ function altijara_resolve_category_id( $key ) {
 		if ( is_numeric( $val ) ) {
 			$tid = (int) $val;
 			$t   = get_term( $tid, 'category' );
-			return ( $t && ! is_wp_error( $t ) ) ? $tid : 0;
+			if ( $t && ! is_wp_error( $t ) ) {
+				return $tid;
+			}
+		} else {
+			$term = get_term_by( 'slug', sanitize_title( (string) $val ), 'category' );
+			if ( $term && ! is_wp_error( $term ) ) {
+				return (int) $term->term_id;
+			}
 		}
-		$term = get_term_by( 'slug', sanitize_title( $val ), 'category' );
-		if ( $term && ! is_wp_error( $term ) ) {
-			return (int) $term->term_id;
+	}
+
+	// Live-site aliases (e.g. chamber → the-chamber-news) when map is stale/empty.
+	$aliases = function_exists( 'altijara_category_map_aliases' ) ? altijara_category_map_aliases() : array();
+	if ( ! empty( $aliases[ $key ] ) && is_array( $aliases[ $key ] ) ) {
+		foreach ( $aliases[ $key ] as $candidate ) {
+			$slug = sanitize_title( (string) $candidate );
+			if ( ! $slug ) {
+				continue;
+			}
+			$term = get_term_by( 'slug', $slug, 'category' );
+			if ( $term && ! is_wp_error( $term ) ) {
+				return (int) $term->term_id;
+			}
 		}
 	}
 
@@ -54,26 +72,70 @@ function altijara_resolve_category_id( $key ) {
 }
 
 /**
+ * Reverse-resolve a WP category term to a theme section key (via category_map / aliases).
+ *
+ * @param int|WP_Term|null $term Term ID or object.
+ * @return string Theme key or empty string.
+ */
+function altijara_resolve_category_key( $term ) {
+	if ( is_numeric( $term ) ) {
+		$term = get_term( (int) $term, 'category' );
+	}
+	if ( ! $term instanceof WP_Term || is_wp_error( $term ) ) {
+		return '';
+	}
+
+	$map = altijara_get_option( 'category_map', array() );
+	if ( ! is_array( $map ) ) {
+		$map = array();
+	}
+
+	foreach ( $map as $key => $val ) {
+		$key = sanitize_key( $key );
+		if ( ! $key ) {
+			continue;
+		}
+		if ( is_numeric( $val ) && (int) $val === (int) $term->term_id ) {
+			return $key;
+		}
+		if ( ! is_numeric( $val ) && sanitize_title( (string) $val ) === $term->slug ) {
+			return $key;
+		}
+	}
+
+	$aliases = function_exists( 'altijara_category_map_aliases' ) ? altijara_category_map_aliases() : array();
+	foreach ( $aliases as $key => $cands ) {
+		foreach ( (array) $cands as $cand ) {
+			if ( sanitize_title( (string) $cand ) === $term->slug ) {
+				return sanitize_key( $key );
+			}
+		}
+	}
+
+	return '';
+}
+
+/**
  * Alias candidates for seeding category_map from a live site.
  *
  * @return array<string, string[]>
  */
 function altijara_category_map_aliases() {
 	return array(
-		'chamber'     => array( 'chamber', 'akhbar-al-ghurfa', 'اخبار-الغرفة', 'أخبار-الغرفة' ),
+		'chamber'     => array( 'the-chamber-news', 'chamber', 'akhbar-al-ghurfa', 'اخبار-الغرفة', 'أخبار-الغرفة', 'أخبار الغرفة' ),
 		'exhibitions' => array( 'exhibitions', 'maarid', 'المعارض' ),
-		'followups'   => array( 'followups', 'mutabaat', 'متابعات' ),
+		'followups'   => array( 'follow-ups', 'followups', 'mutabaat', 'متابعات' ),
 		'interviews'  => array( 'interviews', 'liqaatz', 'لقاءات' ),
-		'personality' => array( 'personality', 'issue-cover-personality', 'shakhsiyat', 'شخصية-الغلاف' ),
-		'business'    => array( 'business', 'mal-waamal', 'mal-wa-aamal', 'مال-واعمال', 'مال-وأعمال' ),
-		'logistics'   => array( 'logistics', 'لوجستيات' ),
+		'personality' => array( 'issue-cover-personality', 'personality', 'shakhsiyat', 'شخصية-الغلاف', 'شخصية العدد' ),
+		'business'    => array( 'money-and-business', 'business', 'mal-waamal', 'mal-wa-aamal', 'مال-واعمال', 'مال-وأعمال', 'مال وأعمال' ),
+		'logistics'   => array( 'logistic', 'logistics', 'لوجستيات' ),
 		'industry'    => array( 'industry', 'الصناعة', 'sinaa' ),
 		'energy'      => array( 'energy', 'الطاقة', 'taqa' ),
-		'automotive'  => array( 'automotive', 'cars', 'سيارات' ),
-		'health'      => array( 'health', 'صحة', 'siha' ),
-		'tech'        => array( 'tech', 'technology', 'تقنية', 'taqniya' ),
-		'tourism'     => array( 'tourism', 'سياحة-وترفيه', 'سياحة', 'siyaha' ),
-		'misc'        => array( 'misc', 'منوعات', 'munawwaat' ),
+		'automotive'  => array( 'cars', 'automotive', 'سيارات' ),
+		'health'      => array( 'health', 'صحة', 'صحّة', 'siha' ),
+		'tech'        => array( 'technique', 'tech', 'technology', 'تقنية', 'taqniya' ),
+		'tourism'     => array( 'tourism-and-entertainment', 'tourism', 'سياحة-وترفيه', 'سياحة وترفيه', 'سياحة', 'siyaha' ),
+		'misc'        => array( 'miscellaneous', '_miscellaneous', 'misc', 'منوعات', 'munawwaat' ),
 	);
 }
 
@@ -234,6 +296,39 @@ function altijara_get_category_posts( $term_id, $count = 12, $offset = 0 ) {
 		),
 		'category_' . $term_id
 	);
+}
+
+/**
+ * Count published posts in a category (for AJAX pagination).
+ *
+ * @param int $term_id Category term ID.
+ * @return int
+ */
+function altijara_count_category_posts( $term_id ) {
+	$term_id = absint( $term_id );
+	if ( ! $term_id ) {
+		return 0;
+	}
+	$cache_key = altijara_cache_key( 'category_count_' . $term_id, array( 'v' => 1 ) );
+	$cached    = altijara_cache_get( $cache_key );
+	if ( is_numeric( $cached ) ) {
+		return (int) $cached;
+	}
+	$q = new WP_Query(
+		array(
+			'cat'                 => $term_id,
+			'post_type'           => 'post',
+			'post_status'         => 'publish',
+			'posts_per_page'      => 1,
+			'ignore_sticky_posts' => true,
+			'no_found_rows'       => false,
+			'fields'              => 'ids',
+		)
+	);
+	$total = (int) $q->found_posts;
+	wp_reset_postdata();
+	altijara_cache_set( $cache_key, $total );
+	return $total;
 }
 
 /**

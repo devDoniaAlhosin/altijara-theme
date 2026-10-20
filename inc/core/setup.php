@@ -37,6 +37,53 @@ function altijara_theme_setup() {
 add_action( 'after_setup_theme', 'altijara_theme_setup' );
 
 /**
+ * Clean document titles on category / issue archives (no "Category:" / "Archives" prefix).
+ *
+ * @param array<string, string> $parts Title parts.
+ * @return array<string, string>
+ */
+function altijara_document_title_parts( $parts ) {
+	if ( ! is_array( $parts ) ) {
+		return $parts;
+	}
+	if ( is_category() ) {
+		$term = get_queried_object();
+		if ( $term instanceof WP_Term && ! empty( $term->name ) ) {
+			$parts['title'] = $term->name;
+		}
+	} elseif ( is_post_type_archive( 'issue' ) ) {
+		$parts['title'] = __( 'أعداد المجلة', 'altijara' );
+	} elseif ( is_singular( 'issue' ) ) {
+		$parts['title'] = get_the_title();
+	}
+	return $parts;
+}
+add_filter( 'document_title_parts', 'altijara_document_title_parts', 20 );
+
+/**
+ * Prefer clean titles when Rank Math is active.
+ *
+ * @param string $title Title.
+ * @return string
+ */
+function altijara_rank_math_title( $title ) {
+	if ( is_category() ) {
+		$term = get_queried_object();
+		if ( $term instanceof WP_Term && ! empty( $term->name ) ) {
+			$site = get_bloginfo( 'name' );
+			return $term->name . ( $site ? ' — ' . $site : '' );
+		}
+	}
+	if ( is_post_type_archive( 'issue' ) ) {
+		$site = get_bloginfo( 'name' );
+		$base = __( 'أعداد المجلة', 'altijara' );
+		return $base . ( $site ? ' — ' . $site : '' );
+	}
+	return $title;
+}
+add_filter( 'rank_math/frontend/title', 'altijara_rank_math_title', 20 );
+
+/**
  * Register Issue custom post type (magazine issues archive).
  */
 function altijara_register_issue_cpt() {

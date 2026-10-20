@@ -144,7 +144,10 @@ function altijara_default_options() {
 			'flip_base' => 'https://online.fliphtml5.com/',
 		),
 		'advertising'  => array(
-			'sidebar_enabled' => true,
+			'sidebar_enabled'   => true,
+			'sidebar_shortcode' => '',
+			'sidebar_image'     => 'https://altijaramagazine.com/wp-content/uploads/angwp/items/31121/%D8%AE%D8%AF%D9%85%D8%A7%D8%AA%20%D9%85%D9%8F%D8%AA%D9%85%D9%8A%D8%B2%D8%A9_%20300x600%20copy.png',
+			'sidebar_url'       => '',
 		),
 		'integrations' => array(
 			'rest_prefer_local' => true,
@@ -152,25 +155,27 @@ function altijara_default_options() {
 		'advanced'     => array(
 			'cache_ttl' => 900,
 		),
+		// Prefer live production slugs (مجلة التجارة); detect_category_map may replace with term IDs.
 		'category_map'   => array(
-			'chamber'     => 'chamber',
+			'chamber'     => 'the-chamber-news',
 			'exhibitions' => 'exhibitions',
-			'followups'   => 'followups',
+			'followups'   => 'follow-ups',
 			'interviews'  => 'interviews',
 			'personality' => 'issue-cover-personality',
-			'business'    => 'business',
-			'logistics'   => 'logistics',
+			'business'    => 'money-and-business',
+			'logistics'   => 'logistic',
 			'industry'    => 'industry',
 			'energy'      => 'energy',
-			'automotive'  => 'automotive',
+			'automotive'  => 'cars',
 			'health'      => 'health',
-			'tech'        => 'tech',
-			'tourism'     => 'tourism',
-			'misc'        => 'misc',
+			'tech'        => 'technique',
+			'tourism'     => 'tourism-and-entertainment',
+			'misc'        => 'miscellaneous',
 		),
 		'sections'        => array(),
 		// sections_order omitted from defaults — only stored after Homepage save.
 		'archive_layouts' => array(),
+		// archive_full_hero intentionally omitted until saved (legacy keys apply until then).
 	);
 }
 

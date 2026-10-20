@@ -6,16 +6,22 @@
 
 const NEWS_PAGE_SIZE = 10;
 const FEATURED_COUNT = 8;
+/** Legacy fallback keys if PHP did not localize fullHero. */
 const FULL_HERO_CATS = new Set(['automotive', 'interviews', 'tourism', 'exhibitions']);
 
 function isFullHeroCategory(key) {
+  if (window.AltijaraCategory && typeof window.AltijaraCategory.fullHero === 'boolean') {
+    return !!window.AltijaraCategory.fullHero;
+  }
   return FULL_HERO_CATS.has(key || getCurrentCategoryKey());
 }
 
 function layoutCounts(key) {
   const rec = isFullHeroCategory(key) ? 0 : 3;
-  const spotlight = 1 + rec + FEATURED_COUNT;
-  return { rec, featured: FEATURED_COUNT, spotlight, firstBatch: spotlight + NEWS_PAGE_SIZE };
+  const spotlight =
+    Number(window.AltijaraCategory?.spotlight) || 1 + rec + FEATURED_COUNT;
+  const newsSize = Number(window.AltijaraCategory?.newsSize) || NEWS_PAGE_SIZE;
+  return { rec, featured: FEATURED_COUNT, spotlight, newsSize, firstBatch: spotlight + newsSize };
 }
 let currentPage = 1;
 let totalPages = 1;
@@ -26,12 +32,25 @@ function getCategoriesData() {
 }
 
 function getCurrentCategoryKey() {
+  if (window.AltijaraCategory && window.AltijaraCategory.key) {
+    return window.AltijaraCategory.key;
+  }
   return new URLSearchParams(window.location.search).get('cat') || 'chamber';
 }
 
 function getCurrentCategory() {
   const key = getCurrentCategoryKey();
-  return { key, data: getCategoriesData()[key] };
+  const data = Object.assign({}, getCategoriesData()[key] || {});
+  if (window.AltijaraCategory && window.AltijaraCategory.termId) {
+    data.wpCategoryId = window.AltijaraCategory.termId;
+  }
+  if (window.AltijaraCategory && window.AltijaraCategory.name) {
+    data.title = window.AltijaraCategory.name;
+  }
+  if (!data.docTitle && data.title) {
+    data.docTitle = data.title;
+  }
+  return { key, data };
 }
 
 function getWp() {
@@ -93,12 +112,30 @@ function initCategoryFromUrl() {
 }
 
 function applyCategoryLabels(title) {
-  document.querySelectorAll('.cat-featured-tag').forEach((el) => {
-    el.textContent = title;
-  });
+  // Featured tags removed — category is already clear from nav/context.
 }
 
 async function loadCategoryLiveContent() {
+  // PHP already rendered the archive — wire AJAX pagination + enhance widgets.
+  if (window.AltijaraCategory && window.AltijaraCategory.ssr) {
+    const { data } = getCurrentCategory();
+    if (data?.title) applyCategoryLabels(data.title);
+    const topGrid = document.querySelector('.cat-top-grid');
+    if (topGrid) topGrid.classList.toggle('is-hero-full', isFullHeroCategory());
+    const meta = window.AltijaraCategory;
+    currentPage = Math.max(1, Number(meta.page) || 1);
+    totalPages = Math.max(1, Number(meta.totalPages) || newsPagesFromTotal(meta.total || 0));
+    renderPagination();
+    fillNewIssue();
+    scheduleTitleTruncation();
+    revealLiveContent();
+    window.addEventListener('popstate', (e) => {
+      const page = Number(e.state?.catPage) || 1;
+      if (page !== currentPage) goToCategoryPage(page, { push: false });
+    });
+    return;
+  }
+
   ensureCatLoadingUI();
 
   const { key, data } = getCurrentCategory();
@@ -153,9 +190,10 @@ async function loadCategoryLiveContent() {
 }
 
 function newsPagesFromTotal(total) {
-  const remaining = Math.max(0, (Number(total) || 0) - layoutCounts().spotlight);
+  const counts = layoutCounts();
+  const remaining = Math.max(0, (Number(total) || 0) - counts.spotlight);
   if (!remaining) return 1;
-  return Math.max(1, Math.ceil(remaining / NEWS_PAGE_SIZE));
+  return Math.max(1, Math.ceil(remaining / (counts.newsSize || NEWS_PAGE_SIZE)));
 }
 
 function applyCategoryPosts(posts, data, trimAtWord, page = 1, total = 0) {
@@ -163,15 +201,17 @@ function applyCategoryPosts(posts, data, trimAtWord, page = 1, total = 0) {
   totalPages = newsPagesFromTotal(total || posts.length);
 
   const counts = layoutCounts();
+  const newsSize = Number(window.AltijaraCategory?.newsSize) || NEWS_PAGE_SIZE;
   if (page === 1) {
-    fillHero(posts[0], data.title, trimAtWord);
-    if (counts.rec) fillRecommended(posts.slice(1, 1 + counts.rec), data.title);
-    fillFeatured(posts.slice(1 + counts.rec, counts.spotlight), data.title);
-    fillNewsList(posts.slice(counts.spotlight, counts.firstBatch), data.title, false);
+    fillHero(posts[0], data?.title, trimAtWord);
+    if (counts.rec) fillRecommended(posts.slice(1, 1 + counts.rec), data?.title);
+    fillFeatured(posts.slice(1 + counts.rec, counts.spotlight), data?.title);
+    fillNewsList(posts.slice(counts.spotlight, counts.spotlight + newsSize), data?.title, false);
   } else {
-    fillNewsList(posts.slice(0, NEWS_PAGE_SIZE), data.title, false);
+    fillNewsList(posts.slice(0, newsSize), data?.title, false);
   }
 
+  hideNewsSkeleton();
   renderPagination();
   getWp().localizeArticleLinks?.(document);
 }
@@ -221,8 +261,8 @@ function fillNewIssue() {
   if (!list) return;
 
   const issues = (window.AltijaraIssues || window.AltijaraRecentIssues || [])
-    .filter((i) => i && (i.flipbook || i.link))
-    .slice(0, 6);
+    .filter((i) => i && (i.cover || i.src || i.flipbook || i.link))
+    .slice(0, 8);
   const widget = list.closest('.cat-new-issue-widget');
   if (!issues.length) {
     if (widget) widget.hidden = true;
@@ -231,39 +271,111 @@ function fillNewIssue() {
   if (widget) widget.hidden = false;
 
   let index = 0;
-  const markReady = (el) => {
-    if (el) el.classList.add('is-ready');
-  };
-  const show = (next) => {
-    index = (next + issues.length) % issues.length;
-    const issue = issues[index];
-    const href = issue.flipbook || issue.link;
-    const title = String(issue.title || `العدد ${issue.number}`).replace(/"/g, '&quot;');
-    const coverSrc = issue.cover || issue.src || '';
-    list.innerHTML = `
-      <a href="${href}" class="cat-new-issue-cover" target="_blank" rel="noopener">
-        <span class="sk sk-cover" aria-hidden="true"></span>
-        <img src="${coverSrc}" alt="${title}" loading="lazy" decoding="async">
-      </a>`;
-    const cover = list.querySelector('.cat-new-issue-cover');
-    const img = list.querySelector('img');
-    if (!img) return;
-    const fallback = 'assets/images/issue-730-clean.png';
-    img.onerror = () => {
-      img.onerror = null;
-      img.src = fallback;
-    };
-    if (img.complete && img.naturalWidth) markReady(cover);
-    else img.onload = () => markReady(cover);
-  };
-  show(0);
-
+  let busy = false;
   const prev = widget?.querySelector('.cat-new-issue-arrow--prev');
   const next = widget?.querySelector('.cat-new-issue-arrow--next');
   const arrows = widget?.querySelector('.cat-new-issue-arrows');
   if (arrows) arrows.hidden = issues.length < 2;
-  if (prev) prev.onclick = () => show(index - 1);
-  if (next) next.onclick = () => show(index + 1);
+
+  const themeBase =
+    (window.AltijaraTheme && window.AltijaraTheme.urls && window.AltijaraTheme.urls.theme) || '';
+  const fallbackImg = themeBase
+    ? `${themeBase}/assets/images/issue-730-clean.png`
+    : 'assets/images/issue-730-clean.png';
+
+  const syncArrows = () => {
+    if (prev) prev.classList.remove('is-accent');
+    if (next) next.classList.toggle('is-accent', issues.length > 1);
+  };
+
+  const paintCover = (issue, { skeletonFirst = false } = {}) => {
+    const href = issue.flipbook || issue.link || '#';
+    const title = String(issue.title || `العدد ${issue.number || ''}`).replace(/"/g, '&quot;');
+    const coverSrc = issue.cover || issue.src || '';
+    let cover = list.querySelector('a.cat-new-issue-cover');
+    let img = cover && cover.querySelector('img');
+
+    if (!cover || !img) {
+      list.innerHTML = `
+        <a href="${href}" class="cat-new-issue-cover" target="_blank" rel="noopener">
+          <span class="sk sk-cover" aria-hidden="true"></span>
+          <img alt="${title}" decoding="async">
+        </a>`;
+      cover = list.querySelector('.cat-new-issue-cover');
+      img = cover && cover.querySelector('img');
+    } else {
+      cover.setAttribute('href', href);
+      if (!cover.querySelector('.sk-cover')) {
+        cover.insertAdjacentHTML('afterbegin', '<span class="sk sk-cover" aria-hidden="true"></span>');
+      }
+      img.alt = title;
+    }
+
+    if (!cover || !img) return;
+
+    const startedAt = skeletonFirst ? Date.now() : 0;
+    const minSkeletonMs = 280;
+
+    const finish = () => {
+      const reveal = () => {
+        cover.classList.remove('is-switching');
+        cover.classList.add('is-ready');
+        busy = false;
+        syncArrows();
+      };
+      if (!skeletonFirst) {
+        reveal();
+        return;
+      }
+      const wait = Math.max(0, minSkeletonMs - (Date.now() - startedAt));
+      setTimeout(reveal, wait);
+    };
+
+    if (skeletonFirst) {
+      cover.classList.remove('is-ready');
+      cover.classList.add('is-switching');
+      img.onload = null;
+      img.onerror = null;
+      // Clear src so cached images still show skeleton briefly.
+      img.removeAttribute('src');
+    }
+
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = fallbackImg;
+    };
+    img.onload = finish;
+
+    requestAnimationFrame(() => {
+      img.src = coverSrc || fallbackImg;
+      if (img.complete && img.naturalWidth) finish();
+    });
+  };
+
+  const show = (nextIndex, fromClick = false) => {
+    if (busy && fromClick) return;
+    busy = fromClick;
+    index = (nextIndex + issues.length) % issues.length;
+    paintCover(issues[index], { skeletonFirst: fromClick });
+  };
+
+  // Keep SSR cover on first paint; only skeleton when user clicks arrows.
+  const ssrCover = list.querySelector('a.cat-new-issue-cover img[src]');
+  if (ssrCover) {
+    const cover = ssrCover.closest('.cat-new-issue-cover');
+    if (ssrCover.complete && ssrCover.naturalWidth) {
+      cover && cover.classList.add('is-ready');
+    } else {
+      ssrCover.onload = () => cover && cover.classList.add('is-ready');
+    }
+  } else {
+    show(0, false);
+  }
+
+  syncArrows();
+
+  if (prev) prev.onclick = () => show(index - 1, true);
+  if (next) next.onclick = () => show(index + 1, true);
 }
 
 async function fillMostRead() {
@@ -367,9 +479,6 @@ function fillFeatured(posts, title) {
       img.alt = p.title;
     }
 
-    const tag = card.querySelector('.cat-featured-tag');
-    if (tag) tag.textContent = title;
-
     const titleLink = card.querySelector('.cat-featured-title a');
     if (titleLink) {
       titleLink.setAttribute('data-full-title', p.title);
@@ -463,49 +572,108 @@ function toggleSaveArticle(btn) {
   }
 }
 
-async function goToCategoryPage(page) {
+async function goToCategoryPage(page, opts = {}) {
   const target = Number(page);
   if (pagingBusy || !target || target < 1 || target > totalPages || target === currentPage) return;
 
   const { data } = getCurrentCategory();
-  const wpId = data?.wpCategoryId;
+  const wpId = data?.wpCategoryId || window.AltijaraCategory?.termId;
   const { fetchCategoryPage, trimAtWord } = getWp();
   if (!wpId || !fetchCategoryPage) return;
 
   pagingBusy = true;
   setPaginationLoading(true);
+  showNewsSkeleton();
 
   const counts = layoutCounts();
-  const offset = target === 1 ? 0 : counts.spotlight + (target - 1) * NEWS_PAGE_SIZE;
-  const perPage = target === 1 ? counts.firstBatch : NEWS_PAGE_SIZE;
-  const pageData = await fetchCategoryPage(wpId, perPage, 1, offset);
-  if (!pageData.posts?.length) {
-    pagingBusy = false;
-    setPaginationLoading(false);
-    return;
-  }
+  const newsSize = Number(window.AltijaraCategory?.newsSize) || NEWS_PAGE_SIZE;
+  const spotlight = Number(window.AltijaraCategory?.spotlight) || counts.spotlight;
+  const offset = target === 1 ? 0 : spotlight + (target - 1) * newsSize;
+  const perPage = target === 1 ? spotlight + newsSize : newsSize;
 
-  applyCategoryPosts(
-    pageData.posts,
-    data,
-    trimAtWord,
-    target,
-    pageData.total || pageData.posts.length
-  );
-  scheduleTitleTruncation();
+  try {
+    const pageData = await fetchCategoryPage(wpId, perPage, 1, offset);
+    if (!pageData.posts?.length) {
+      hideNewsSkeleton();
+      pagingBusy = false;
+      setPaginationLoading(false);
+      return;
+    }
 
-  const list = document.getElementById('catNewsList');
-  if (list) {
-    list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const total = pageData.total || window.AltijaraCategory?.total || pageData.posts.length;
+    if (target === 1) {
+      applyCategoryPosts(pageData.posts, data, trimAtWord, target, total);
+    } else {
+      currentPage = target;
+      totalPages = newsPagesFromTotal(total);
+      fillNewsList(pageData.posts.slice(0, newsSize), data?.title || '', false);
+      hideNewsSkeleton();
+      renderPagination();
+      getWp().localizeArticleLinks?.(document);
+    }
+    scheduleTitleTruncation();
+
+    if (opts.push !== false) {
+      updateCategoryPageUrl(target);
+    }
+
+    const list = document.getElementById('catNewsList');
+    if (list) {
+      list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  } catch (err) {
+    console.warn('Category pagination failed:', err);
+    hideNewsSkeleton();
   }
 
   pagingBusy = false;
   setPaginationLoading(false);
 }
 
+function updateCategoryPageUrl(page) {
+  try {
+    const url = new URL(window.location.href);
+    if (page <= 1) {
+      url.searchParams.delete('paged');
+      url.pathname = url.pathname.replace(/\/page\/\d+\/?$/, '/');
+    } else {
+      url.searchParams.set('paged', String(page));
+    }
+    history.pushState({ catPage: page }, '', url);
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function showNewsSkeleton(count = 5) {
+  const list = document.getElementById('catNewsList');
+  if (!list) return;
+  list.setAttribute('aria-busy', 'true');
+  list.classList.add('is-loading');
+  list.innerHTML = Array.from({ length: count }, () => `
+    <article class="cat-news-item cat-news-skel" aria-hidden="true">
+      <div class="cat-news-img-wrap"><span class="sk sk-thumb"></span></div>
+      <div class="cat-news-content">
+        <span class="sk sk-line sk-line--title"></span>
+        <span class="sk sk-line"></span>
+        <span class="sk sk-line sk-line--short"></span>
+        <span class="sk sk-line sk-line--meta"></span>
+      </div>
+    </article>
+  `).join('');
+}
+
+function hideNewsSkeleton() {
+  const list = document.getElementById('catNewsList');
+  if (!list) return;
+  list.removeAttribute('aria-busy');
+  list.classList.remove('is-loading');
+}
+
 function setPaginationLoading(isLoading) {
   const wrap = document.getElementById('catPagination');
   if (!wrap) return;
+  wrap.classList.toggle('is-loading', !!isLoading);
   wrap.style.opacity = isLoading ? '0.55' : '1';
   wrap.querySelectorAll('button').forEach((btn) => {
     btn.disabled = isLoading || btn.dataset.keepDisabled === '1';

@@ -23,9 +23,16 @@ function altijara_enqueue_assets() {
 	);
 
 	wp_enqueue_style(
+		'altijara-fontawesome',
+		'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css',
+		array(),
+		'6.5.2'
+	);
+
+	wp_enqueue_style(
 		'altijara-main',
 		altijara_asset( 'assets/css/style.css' ),
-		array( 'altijara-fonts' ),
+		array( 'altijara-fonts', 'altijara-fontawesome' ),
 		$ver
 	);
 
@@ -116,6 +123,31 @@ function altijara_enqueue_assets() {
 				'strategy'  => 'defer',
 			)
 		);
+
+		$term_obj = get_queried_object();
+		$term_id  = ( $term_obj && isset( $term_obj->term_id ) ) ? (int) $term_obj->term_id : 0;
+		$cat_key  = ( $term_id && function_exists( 'altijara_resolve_category_key' ) )
+			? altijara_resolve_category_key( $term_id )
+			: '';
+
+		// Prefer live issue CPT covers when available (overrides static fallback in issues-recent.js).
+		if ( function_exists( 'altijara_get_issue_posts' ) && function_exists( 'altijara_issue_to_js_payload' ) ) {
+			$live_issues = array();
+			foreach ( altijara_get_issue_posts( 8, 0 ) as $issue_post ) {
+				$row = altijara_issue_to_js_payload( $issue_post );
+				if ( ! empty( $row['cover'] ) || ! empty( $row['flipbook'] ) ) {
+					$live_issues[] = $row;
+				}
+			}
+			if ( $live_issues ) {
+				wp_add_inline_script(
+					'altijara-issues-recent',
+					'window.AltijaraRecentIssues=' . wp_json_encode( $live_issues ) . ';',
+					'after'
+				);
+			}
+		}
+
 		wp_enqueue_script(
 			'altijara-category',
 			altijara_asset( 'assets/js/category/category.js' ),
@@ -124,6 +156,31 @@ function altijara_enqueue_assets() {
 			array(
 				'in_footer' => true,
 				'strategy'  => 'defer',
+			)
+		);
+		$full_hero   = ( $term_id && function_exists( 'altijara_category_uses_full_hero' ) && altijara_category_uses_full_hero( $term_id ) );
+		$total_posts = ( $term_id && function_exists( 'altijara_count_category_posts' ) ) ? altijara_count_category_posts( $term_id ) : 0;
+		$spotlight   = $full_hero ? 9 : 12;
+		$news_size   = 10;
+		$news_remain = max( 0, $total_posts - $spotlight );
+		$total_pages = $news_remain > 0 ? (int) max( 1, (int) ceil( $news_remain / $news_size ) ) : 1;
+		$paged_now   = max( 1, (int) get_query_var( 'paged' ), (int) get_query_var( 'page' ) );
+
+		wp_localize_script(
+			'altijara-category',
+			'AltijaraCategory',
+			array(
+				'termId'     => $term_id,
+				'key'        => $cat_key,
+				'slug'       => ( $term_obj && ! empty( $term_obj->slug ) ) ? (string) $term_obj->slug : '',
+				'name'       => ( $term_obj && ! empty( $term_obj->name ) ) ? (string) $term_obj->name : '',
+				'ssr'        => true,
+				'fullHero'   => $full_hero,
+				'total'      => $total_posts,
+				'totalPages' => $total_pages,
+				'page'       => $paged_now,
+				'newsSize'   => $news_size,
+				'spotlight'  => $spotlight,
 			)
 		);
 	}

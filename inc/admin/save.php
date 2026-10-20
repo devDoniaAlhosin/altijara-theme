@@ -100,7 +100,10 @@ function altijara_handle_settings_save() {
 			altijara_update_options(
 				array(
 					'advertising' => array(
-						'sidebar_enabled' => ! empty( $ad['sidebar_enabled'] ),
+						'sidebar_enabled'   => ! empty( $ad['sidebar_enabled'] ),
+						'sidebar_shortcode' => isset( $ad['sidebar_shortcode'] ) ? sanitize_text_field( $ad['sidebar_shortcode'] ) : '',
+						'sidebar_image'     => isset( $ad['sidebar_image'] ) ? esc_url_raw( $ad['sidebar_image'] ) : '',
+						'sidebar_url'       => isset( $ad['sidebar_url'] ) ? esc_url_raw( $ad['sidebar_url'] ) : '',
 					),
 				)
 			);
@@ -141,11 +144,47 @@ function altijara_handle_settings_save() {
 		if ( ! empty( $_POST['altijara_detect_category_map'] ) && function_exists( 'altijara_detect_category_map' ) ) {
 			$map = altijara_detect_category_map( true );
 			altijara_update_options( array( 'category_map' => $map ) );
-			echo '<div class="notice notice-success"><p>' . esc_html__( 'Category map updated from live categories.', 'altijara' ) . '</p></div>';
+			$notice = esc_html__( 'Category map updated from live categories.', 'altijara' );
+			if ( function_exists( 'altijara_sync_nav_menus_from_category_map' ) ) {
+				$sync   = altijara_sync_nav_menus_from_category_map();
+				$notice .= ' ' . sprintf(
+					/* translators: 1: updated count, 2: added count */
+					esc_html__( 'Menus synced (%1$d updated, %2$d added).', 'altijara' ),
+					(int) ( $sync['updated'] ?? 0 ),
+					(int) ( $sync['added'] ?? 0 )
+				);
+			}
+			echo '<div class="notice notice-success"><p>' . $notice . '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above
+		}
+		if ( ! empty( $_POST['altijara_sync_nav_categories'] ) && function_exists( 'altijara_sync_nav_menus_from_category_map' ) ) {
+			$sync = altijara_sync_nav_menus_from_category_map();
+			echo '<div class="notice notice-success"><p>' . esc_html(
+				sprintf(
+					/* translators: 1: updated count, 2: added count */
+					__( 'Menu category links synced (%1$d updated, %2$d added). Items now point to /category/{slug}/.', 'altijara' ),
+					(int) ( $sync['updated'] ?? 0 ),
+					(int) ( $sync['added'] ?? 0 )
+				)
+			) . '</p></div>';
+			if ( ! empty( $sync['pending'] ) && is_array( $sync['pending'] ) ) {
+				echo '<div class="notice notice-warning"><p>' . esc_html__( 'Some items still pending (category not mapped):', 'altijara' ) . ' ' . esc_html( implode( ', ', $sync['pending'] ) ) . '</p></div>';
+			}
 		}
 		if ( isset( $_POST['altijara_archive_layouts'] ) && is_array( $_POST['altijara_archive_layouts'] ) && function_exists( 'altijara_sanitize_archive_layouts' ) ) {
 			$layouts = altijara_sanitize_archive_layouts( wp_unslash( $_POST['altijara_archive_layouts'] ) ); // phpcs:ignore
-			altijara_update_options( array( 'archive_layouts' => $layouts ) );
+			$full_hero = array();
+			if ( isset( $_POST['altijara_archive_full_hero'] ) && is_array( $_POST['altijara_archive_full_hero'] ) && function_exists( 'altijara_sanitize_archive_full_hero' ) ) {
+				$full_hero = altijara_sanitize_archive_full_hero( wp_unslash( $_POST['altijara_archive_full_hero'] ) ); // phpcs:ignore
+			} elseif ( function_exists( 'altijara_sanitize_archive_full_hero' ) ) {
+				// Form submitted without any checkbox checked → clear list.
+				$full_hero = array();
+			}
+			altijara_update_options(
+				array(
+					'archive_layouts'   => $layouts,
+					'archive_full_hero' => $full_hero,
+				)
+			);
 			echo '<div class="notice notice-success"><p>' . esc_html__( 'Archive layouts saved.', 'altijara' ) . '</p></div>';
 		}
 }

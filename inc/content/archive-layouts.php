@@ -70,6 +70,64 @@ function altijara_get_category_archive_layout( $term_id ) {
 }
 
 /**
+ * Sanitize list of category term IDs that use full-width hero (no side recommended column).
+ *
+ * @param mixed $raw Raw POST (array of term IDs).
+ * @return int[]
+ */
+function altijara_sanitize_archive_full_hero( $raw ) {
+	$out = array();
+	if ( ! is_array( $raw ) ) {
+		return $out;
+	}
+	foreach ( $raw as $tid ) {
+		$tid = absint( $tid );
+		if ( $tid ) {
+			$out[] = $tid;
+		}
+	}
+	return array_values( array_unique( $out ) );
+}
+
+/**
+ * Category term IDs using hero-only top layout.
+ * Until saved from Archives tab, falls back to legacy keys: automotive, interviews, tourism, exhibitions.
+ *
+ * @return int[]
+ */
+function altijara_get_full_hero_category_ids() {
+	$raw = get_option( defined( 'ALTIJARA_OPTION_KEY' ) ? ALTIJARA_OPTION_KEY : 'altijara_theme_settings', array() );
+	if ( is_array( $raw ) && array_key_exists( 'archive_full_hero', $raw ) && is_array( $raw['archive_full_hero'] ) ) {
+		// Explicit save (including empty) wins over legacy defaults.
+		return array_values( array_unique( array_filter( array_map( 'absint', $raw['archive_full_hero'] ) ) ) );
+	}
+
+	$legacy_keys = array( 'automotive', 'interviews', 'tourism', 'exhibitions' );
+	$ids         = array();
+	foreach ( $legacy_keys as $key ) {
+		$id = function_exists( 'altijara_resolve_category_id' ) ? altijara_resolve_category_id( $key ) : 0;
+		if ( $id ) {
+			$ids[] = (int) $id;
+		}
+	}
+	return array_values( array_unique( $ids ) );
+}
+
+/**
+ * Whether a category archive should show a single full hero (no side list).
+ *
+ * @param int $term_id Category term ID.
+ * @return bool
+ */
+function altijara_category_uses_full_hero( $term_id ) {
+	$term_id = absint( $term_id );
+	if ( ! $term_id ) {
+		return false;
+	}
+	return in_array( $term_id, altijara_get_full_hero_category_ids(), true );
+}
+
+/**
  * Whether the current request should use the issues archive UI.
  *
  * @return bool

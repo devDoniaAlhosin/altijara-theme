@@ -247,8 +247,8 @@
     if (!list) return;
 
     const issues = (window.AltijaraIssues || window.AltijaraRecentIssues || [])
-      .filter((i) => i && (i.flipbook || i.link))
-      .slice(0, 6);
+      .filter((i) => i && (i.cover || i.src || i.flipbook || i.link))
+      .slice(0, 8);
     const widget = list.closest('.cat-new-issue-widget');
     if (!issues.length) {
       if (widget) widget.hidden = true;
@@ -257,37 +257,110 @@
     if (widget) widget.hidden = false;
 
     let index = 0;
-    const markReady = (cover) => {
-      if (cover) cover.classList.add('is-ready');
-    };
-    const show = (next) => {
-      index = (next + issues.length) % issues.length;
-      const issue = issues[index];
-      const href = issue.flipbook || issue.link;
-      list.innerHTML = `
-        <a href="${esc(href)}" class="cat-new-issue-cover" target="_blank" rel="noopener">
-          <span class="sk sk-cover" aria-hidden="true"></span>
-          <img src="${esc(issue.cover || issue.src || '')}" alt="${esc(issue.title || '')}" loading="lazy" decoding="async">
-        </a>`;
-      const cover = list.querySelector('.cat-new-issue-cover');
-      const img = list.querySelector('img');
-      if (!img) return;
-      const fallback = 'assets/images/issue-730-clean.png';
-      img.onerror = () => {
-        img.onerror = null;
-        img.src = fallback;
-      };
-      if (img.complete && img.naturalWidth) markReady(cover);
-      else img.onload = () => markReady(cover);
-    };
-    show(0);
-
+    let busy = false;
     const prev = widget && widget.querySelector('.cat-new-issue-arrow--prev');
     const next = widget && widget.querySelector('.cat-new-issue-arrow--next');
     const arrows = widget && widget.querySelector('.cat-new-issue-arrows');
     if (arrows) arrows.hidden = issues.length < 2;
-    if (prev) prev.onclick = () => show(index - 1);
-    if (next) next.onclick = () => show(index + 1);
+
+    const themeBase =
+      (window.AltijaraTheme && window.AltijaraTheme.urls && window.AltijaraTheme.urls.theme) || '';
+    const fallbackImg = themeBase
+      ? `${themeBase}/assets/images/issue-730-clean.png`
+      : 'assets/images/issue-730-clean.png';
+
+    const syncArrows = () => {
+      if (prev) prev.classList.remove('is-accent');
+      if (next) next.classList.toggle('is-accent', issues.length > 1);
+    };
+
+    const paintCover = (issue, skeletonFirst) => {
+      const href = issue.flipbook || issue.link || '#';
+      const title = issue.title || `العدد ${issue.number || ''}`;
+      const coverSrc = issue.cover || issue.src || '';
+      let cover = list.querySelector('a.cat-new-issue-cover');
+      let img = cover && cover.querySelector('img');
+
+      if (!cover || !img) {
+        list.innerHTML = `
+          <a href="${esc(href)}" class="cat-new-issue-cover" target="_blank" rel="noopener">
+            <span class="sk sk-cover" aria-hidden="true"></span>
+            <img alt="${esc(title)}" decoding="async">
+          </a>`;
+        cover = list.querySelector('.cat-new-issue-cover');
+        img = cover && cover.querySelector('img');
+      } else {
+        cover.setAttribute('href', href);
+        if (!cover.querySelector('.sk-cover')) {
+          cover.insertAdjacentHTML('afterbegin', '<span class="sk sk-cover" aria-hidden="true"></span>');
+        }
+        img.alt = title;
+      }
+
+      if (!cover || !img) return;
+
+      const startedAt = skeletonFirst ? Date.now() : 0;
+      const minSkeletonMs = 280;
+
+      const finish = () => {
+        const reveal = () => {
+          cover.classList.remove('is-switching');
+          cover.classList.add('is-ready');
+          busy = false;
+          syncArrows();
+        };
+        if (!skeletonFirst) {
+          reveal();
+          return;
+        }
+        const wait = Math.max(0, minSkeletonMs - (Date.now() - startedAt));
+        setTimeout(reveal, wait);
+      };
+
+      if (skeletonFirst) {
+        cover.classList.remove('is-ready');
+        cover.classList.add('is-switching');
+        img.onload = null;
+        img.onerror = null;
+        img.removeAttribute('src');
+      }
+
+      img.onerror = () => {
+        img.onerror = null;
+        img.src = fallbackImg;
+      };
+      img.onload = finish;
+
+      requestAnimationFrame(() => {
+        img.src = coverSrc || fallbackImg;
+        if (img.complete && img.naturalWidth) finish();
+      });
+    };
+
+    const show = (nextIndex, fromClick) => {
+      if (busy && fromClick) return;
+      busy = !!fromClick;
+      index = (nextIndex + issues.length) % issues.length;
+      paintCover(issues[index], !!fromClick);
+    };
+
+    const ssrCover = list.querySelector('a.cat-new-issue-cover img[src]');
+    if (ssrCover) {
+      const cover = ssrCover.closest('.cat-new-issue-cover');
+      if (ssrCover.complete && ssrCover.naturalWidth) {
+        if (cover) cover.classList.add('is-ready');
+      } else {
+        ssrCover.onload = () => {
+          if (cover) cover.classList.add('is-ready');
+        };
+      }
+    } else {
+      show(0, false);
+    }
+
+    syncArrows();
+    if (prev) prev.onclick = () => show(index - 1, true);
+    if (next) next.onclick = () => show(index + 1, true);
   }
 
   function fillMostRead(posts) {

@@ -50,10 +50,10 @@ $first_date   = ! empty( $slides[0] ) ? altijara_format_date_ar( $slides[0]->ID 
 		<?php if ( count( $slides ) > 1 ) : ?>
 			<div class="hero-cover-arrows">
 				<button type="button" class="nav-arrow-btn hero-cover-arrow hero-cover-arrow--prev" aria-label="<?php esc_attr_e( 'العدد السابق', 'altijara' ); ?>">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"></path></svg>
+					<i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
 				</button>
 				<button type="button" class="nav-arrow-btn hero-cover-arrow hero-cover-arrow--next" aria-label="<?php esc_attr_e( 'العدد التالي', 'altijara' ); ?>">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 6l-6 6 6 6"></path></svg>
+					<i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
 				</button>
 			</div>
 		<?php endif; ?>

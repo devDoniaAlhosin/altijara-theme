@@ -17,7 +17,7 @@ if ( ! defined( 'ALTIJARA_SETUP_FLAG' ) ) {
  * Resolve a blueprint item to a URL (or null if pending).
  *
  * @param array<string, string> $item Blueprint row.
- * @return array{url:?string,object:string,object_id:int,status:string}
+ * @return array{url:?string,object:string,object_id:int,type:string,status:string}
  */
 function altijara_resolve_blueprint_item( $item ) {
 	$type = $item['type'] ?? 'custom';
@@ -27,6 +27,7 @@ function altijara_resolve_blueprint_item( $item ) {
 			'url'       => home_url( '/' ),
 			'object'    => 'custom',
 			'object_id' => 0,
+			'type'      => 'custom',
 			'status'    => 'ok',
 		);
 	}
@@ -40,6 +41,7 @@ function altijara_resolve_blueprint_item( $item ) {
 			'url'       => $url,
 			'object'    => 'custom',
 			'object_id' => 0,
+			'type'      => 'custom',
 			'status'    => 'ok',
 		);
 	}
@@ -54,6 +56,7 @@ function altijara_resolve_blueprint_item( $item ) {
 					'url'       => $link,
 					'object'    => 'category',
 					'object_id' => $id,
+					'type'      => 'taxonomy',
 					'status'    => 'ok',
 				);
 			}
@@ -62,6 +65,7 @@ function altijara_resolve_blueprint_item( $item ) {
 			'url'       => null,
 			'object'    => 'custom',
 			'object_id' => 0,
+			'type'      => 'custom',
 			'status'    => 'pending_category:' . $key,
 		);
 	}
@@ -74,6 +78,7 @@ function altijara_resolve_blueprint_item( $item ) {
 				'url'       => get_permalink( $page ),
 				'object'    => 'page',
 				'object_id' => (int) $page->ID,
+				'type'      => 'post_type',
 				'status'    => 'ok',
 			);
 		}
@@ -82,6 +87,7 @@ function altijara_resolve_blueprint_item( $item ) {
 			'url'       => home_url( '/' . $slug . '/' ),
 			'object'    => 'custom',
 			'object_id' => 0,
+			'type'      => 'custom',
 			'status'    => 'pending_page:' . $slug,
 		);
 	}
@@ -92,6 +98,7 @@ function altijara_resolve_blueprint_item( $item ) {
 			'url'       => $url ? $url : null,
 			'object'    => 'custom',
 			'object_id' => 0,
+			'type'      => 'custom',
 			'status'    => $url ? 'ok' : 'pending_url',
 		);
 	}
@@ -100,8 +107,66 @@ function altijara_resolve_blueprint_item( $item ) {
 		'url'       => null,
 		'object'    => 'custom',
 		'object_id' => 0,
+		'type'      => 'custom',
 		'status'    => 'skipped',
 	);
+}
+
+/**
+ * Build wp_update_nav_menu_item args from a resolved blueprint row.
+ *
+ * WP expects type=taxonomy+object=category (not type=category), and
+ * type=post_type+object=page (not type=page). Wrong types often save as
+ * custom links that collide with Pages instead of /category/{slug}/.
+ *
+ * @param array<string, mixed> $row      Blueprint row.
+ * @param array<string, mixed> $resolved From altijara_resolve_blueprint_item().
+ * @param int                  $position Menu position.
+ * @return array<string, mixed>
+ */
+function altijara_nav_menu_item_args( $row, $resolved, $position = 1 ) {
+	$item_type = isset( $resolved['type'] ) ? (string) $resolved['type'] : 'custom';
+	$object    = isset( $resolved['object'] ) ? (string) $resolved['object'] : 'custom';
+	$object_id = isset( $resolved['object_id'] ) ? (int) $resolved['object_id'] : 0;
+
+	if ( ! in_array( $item_type, array( 'custom', 'taxonomy', 'post_type', 'post_type_archive' ), true ) ) {
+		// Legacy mistaken values: "category" / "page".
+		if ( 'category' === $object || 'category' === $item_type ) {
+			$item_type = 'taxonomy';
+			$object    = 'category';
+		} elseif ( 'page' === $object || 'page' === $item_type ) {
+			$item_type = 'post_type';
+			$object    = 'page';
+		} else {
+			$item_type = 'custom';
+			$object    = 'custom';
+			$object_id = 0;
+		}
+	}
+
+	$args = array(
+		'menu-item-title'     => isset( $row['label'] ) ? (string) $row['label'] : '',
+		'menu-item-status'    => 'publish',
+		'menu-item-position'  => (int) $position,
+		'menu-item-type'      => $item_type,
+		'menu-item-object'    => $object,
+		'menu-item-object-id' => $object_id,
+	);
+
+	if ( 'custom' === $item_type ) {
+		$args['menu-item-url']       = isset( $resolved['url'] ) ? (string) $resolved['url'] : '';
+		$args['menu-item-object']    = 'custom';
+		$args['menu-item-object-id'] = 0;
+	} elseif ( ! empty( $resolved['url'] ) ) {
+		// Helpful when WP regenerates; taxonomy/post_type ignore this once object is valid.
+		$args['menu-item-url'] = (string) $resolved['url'];
+	}
+
+	if ( ! empty( $row['target'] ) ) {
+		$args['menu-item-target'] = $row['target'];
+	}
+
+	return $args;
 }
 
 /**
@@ -145,24 +210,7 @@ function altijara_ensure_nav_menu( $menu_name, $blueprint ) {
 			$report['pending'][] = ( $row['label'] ?? '' ) . ' (' . $resolved['status'] . ')';
 			continue;
 		}
-		$args = array(
-			'menu-item-title'  => $row['label'] ?? '',
-			'menu-item-url'    => $resolved['url'],
-			'menu-item-status' => 'publish',
-			'menu-item-type'   => ( 'page' === $resolved['object'] || 'category' === $resolved['object'] ) ? $resolved['object'] : 'custom',
-			'menu-item-object' => $resolved['object'],
-			'menu-item-object-id' => $resolved['object_id'],
-			'menu-item-position'  => $position,
-		);
-		if ( ! empty( $row['target'] ) ) {
-			$args['menu-item-target'] = $row['target'];
-		}
-		// For category/page typed items WP expects object-id; for custom use url.
-		if ( 'custom' === $args['menu-item-type'] ) {
-			$args['menu-item-type']   = 'custom';
-			$args['menu-item-object'] = 'custom';
-			$args['menu-item-object-id'] = 0;
-		}
+		$args    = altijara_nav_menu_item_args( $row, $resolved, $position );
 		$item_id = wp_update_nav_menu_item( $report['menu_id'], 0, $args );
 		if ( ! is_wp_error( $item_id ) ) {
 			++$report['items_added'];
@@ -170,6 +218,85 @@ function altijara_ensure_nav_menu( $menu_name, $blueprint ) {
 		}
 		if ( 0 === strpos( $resolved['status'], 'pending_' ) ) {
 			$report['pending'][] = ( $row['label'] ?? '' ) . ' (' . $resolved['status'] . ')';
+		}
+	}
+
+	return $report;
+}
+
+/**
+ * Update existing Altijara menus so category items are real taxonomy links
+ * (/category/{slug}/), not Pages or custom URLs that collide with pages.
+ * Matches items by label from the blueprint (does not wipe custom menus).
+ *
+ * @return array{updated:int,added:int,pending:string[]}
+ */
+function altijara_sync_nav_menus_from_category_map() {
+	$report = array(
+		'updated' => 0,
+		'added'   => 0,
+		'pending' => array(),
+	);
+
+	// Prefer /category/{slug}/ over bare /{slug}/ which collides with Pages.
+	$cat_base = get_option( 'category_base' );
+	if ( '' === (string) $cat_base || '.' === (string) $cat_base ) {
+		update_option( 'category_base', 'category' );
+		flush_rewrite_rules( false );
+	}
+
+	$specs = array(
+		array(
+			'name'      => 'Altijara — القائمة الرئيسية',
+			'blueprint' => function_exists( 'altijara_default_primary_nav_blueprint' ) ? altijara_default_primary_nav_blueprint() : array(),
+		),
+		array(
+			'name'      => 'Altijara — أقسام التذييل',
+			'blueprint' => function_exists( 'altijara_default_footer_sections_blueprint' ) ? altijara_default_footer_sections_blueprint() : array(),
+		),
+	);
+
+	foreach ( $specs as $spec ) {
+		$menu = wp_get_nav_menu_object( $spec['name'] );
+		if ( ! $menu || empty( $spec['blueprint'] ) ) {
+			continue;
+		}
+
+		$items    = wp_get_nav_menu_items( $menu->term_id );
+		$by_title = array();
+		if ( is_array( $items ) ) {
+			foreach ( $items as $item ) {
+				$by_title[ trim( wp_strip_all_tags( (string) $item->title ) ) ] = $item;
+			}
+		}
+
+		$position = 1;
+		foreach ( $spec['blueprint'] as $row ) {
+			$label    = isset( $row['label'] ) ? trim( (string) $row['label'] ) : '';
+			$resolved = altijara_resolve_blueprint_item( $row );
+			if ( ! $label || empty( $resolved['url'] ) ) {
+				if ( $label ) {
+					$report['pending'][] = $label . ' (' . ( $resolved['status'] ?? 'pending' ) . ')';
+				}
+				++$position;
+				continue;
+			}
+
+			$args  = altijara_nav_menu_item_args( $row, $resolved, $position );
+			$db_id = 0;
+			if ( isset( $by_title[ $label ] ) ) {
+				$db_id = (int) $by_title[ $label ]->db_id;
+			}
+
+			$item_id = wp_update_nav_menu_item( (int) $menu->term_id, $db_id, $args );
+			if ( ! is_wp_error( $item_id ) ) {
+				if ( $db_id ) {
+					++$report['updated'];
+				} else {
+					++$report['added'];
+				}
+			}
+			++$position;
 		}
 	}
 
@@ -367,6 +494,9 @@ function altijara_run_theme_setup() {
 		);
 		$report['pending'] = array_merge( $report['pending'], $result['pending'] );
 	}
+
+	// Refresh existing menu item URLs after category map detection.
+	$report['menu_sync'] = altijara_sync_nav_menus_from_category_map();
 
 	// 4) Flush rewrites once per setup version (issue CPT archive).
 	$state = get_option( ALTIJARA_SETUP_FLAG, array() );

@@ -245,7 +245,7 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 				<button type="submit" name="altijara_reset_group" value="header" class="button" onclick="return confirm('Reset header settings to defaults?');"><?php esc_html_e( 'Reset to defaults', 'altijara' ); ?></button>
 
 			<?php elseif ( 'navigation' === $id ) : ?>
-				<p class="description"><?php esc_html_e( 'Menus are managed in the WordPress Menus editor. Default menus are created when the theme is activated.', 'altijara' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Primary section links should open category archives (/category/{slug}/), not Pages. Use Sync below after updating the category map.', 'altijara' ); ?></p>
 				<?php
 				$locs     = get_registered_nav_menus();
 				$assigned = get_nav_menu_locations();
@@ -271,7 +271,8 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 					</tbody>
 				</table>
 				<p class="altijara-admin-actions">
-					<a class="button button-primary" href="<?php echo esc_url( admin_url( 'nav-menus.php' ) ); ?>"><?php esc_html_e( 'Open Menus editor', 'altijara' ); ?></a>
+					<button type="submit" name="altijara_sync_nav_categories" class="button button-primary" value="1"><?php esc_html_e( 'Sync menu → category URLs', 'altijara' ); ?></button>
+					<a class="button" href="<?php echo esc_url( admin_url( 'nav-menus.php' ) ); ?>"><?php esc_html_e( 'Open Menus editor', 'altijara' ); ?></a>
 					<a class="button" href="<?php echo esc_url( admin_url( 'nav-menus.php?action=locations' ) ); ?>"><?php esc_html_e( 'Manage locations', 'altijara' ); ?></a>
 				</p>
 
@@ -292,6 +293,7 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 				<?php
 				$archive_map     = is_array( $opts['archive_layouts'] ?? null ) ? $opts['archive_layouts'] : array();
 				$layout_choices  = function_exists( 'altijara_archive_layout_choices' ) ? altijara_archive_layout_choices() : array( 'posts' => 'Posts', 'issues' => 'Issues' );
+				$full_hero_ids   = function_exists( 'altijara_get_full_hero_category_ids' ) ? altijara_get_full_hero_category_ids() : array();
 				$archive_cats    = get_categories(
 					array(
 						'hide_empty' => false,
@@ -342,6 +344,32 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 					<?php endif; ?>
 					</tbody>
 				</table>
+
+				<div class="altijara-admin-block" style="margin-top:28px;">
+					<h2 class="altijara-admin-block__title"><?php esc_html_e( 'Posts hero layout', 'altijara' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'Select categories that show a single full-width hero (no recommended side column). Unselected categories keep hero + 3 side posts. Defaults match the old prototype: سيارات، لقاءات، سياحة، المعارض.', 'altijara' ); ?></p>
+					<?php if ( empty( $archive_cats ) || is_wp_error( $archive_cats ) ) : ?>
+						<p><?php esc_html_e( 'No categories found.', 'altijara' ); ?></p>
+					<?php else : ?>
+						<div class="altijara-checkbox-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 16px;margin:12px 0 8px;">
+							<?php foreach ( $archive_cats as $cat ) : ?>
+								<?php
+								if ( ! $cat instanceof WP_Term ) {
+									continue;
+								}
+								$tid = (int) $cat->term_id;
+								?>
+								<label style="display:flex;align-items:flex-start;gap:8px;">
+									<input type="checkbox" name="altijara_archive_full_hero[]" value="<?php echo esc_attr( (string) $tid ); ?>" <?php checked( in_array( $tid, $full_hero_ids, true ) ); ?>>
+									<span>
+										<strong><?php echo esc_html( $cat->name ); ?></strong>
+										<code style="display:block;font-size:11px;opacity:.75;"><?php echo esc_html( $cat->slug ); ?></code>
+									</span>
+								</label>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+				</div>
 				<?php submit_button( __( 'Save Archive Layouts', 'altijara' ) ); ?>
 
 			<?php elseif ( 'footer' === $id ) : ?>
@@ -487,6 +515,18 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 					<tr>
 						<th><?php esc_html_e( 'Sidebar ad', 'altijara' ); ?></th>
 						<td><label><input type="checkbox" name="altijara_advertising[sidebar_enabled]" value="1" <?php checked( ! empty( $advertising['sidebar_enabled'] ) ); ?>> <?php esc_html_e( 'Enabled', 'altijara' ); ?></label></td>
+					</tr>
+					<tr>
+						<th><label for="altijara_sidebar_ad_shortcode"><?php esc_html_e( 'Sidebar ad shortcode', 'altijara' ); ?></label></th>
+						<td>
+							<input class="large-text code" type="text" id="altijara_sidebar_ad_shortcode" name="altijara_advertising[sidebar_shortcode]" value="<?php echo esc_attr( $advertising['sidebar_shortcode'] ?? '' ); ?>" placeholder='[the_ad id="123"]'>
+							<p class="description"><?php esc_html_e( 'Paste your ad plugin shortcode (category / article sidebar). Leave empty to use the fallback image or placeholder.', 'altijara' ); ?></p>
+						</td>
+					</tr>
+					<?php altijara_admin_media_field( 'altijara_advertising[sidebar_image]', $advertising['sidebar_image'] ?? '', __( 'Fallback sidebar image', 'altijara' ), __( 'Used when no shortcode is set. Falls back to Header billboard image if empty.', 'altijara' ) ); ?>
+					<tr>
+						<th><?php esc_html_e( 'Fallback sidebar link', 'altijara' ); ?></th>
+						<td><input class="regular-text" type="url" name="altijara_advertising[sidebar_url]" value="<?php echo esc_attr( $advertising['sidebar_url'] ?? '' ); ?>"></td>
 					</tr>
 				</table>
 				<p class="description"><?php esc_html_e( 'Header billboard ad is configured under the Header tab.', 'altijara' ); ?></p>
