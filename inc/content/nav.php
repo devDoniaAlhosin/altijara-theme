@@ -356,6 +356,81 @@ function altijara_render_footer_quick_menu() {
 }
 
 /**
+ * Render drawer section links from the primary category blueprint.
+ */
+function altijara_render_drawer_sections_from_blueprint() {
+	if ( ! function_exists( 'altijara_default_primary_nav_blueprint' ) || ! function_exists( 'altijara_resolve_blueprint_item' ) ) {
+		echo '<ul class="sections-drawer-list" id="sectionsDrawerList" data-wp-menu="0"></ul>';
+		return;
+	}
+	$current_cat = is_category() ? (int) get_queried_object_id() : 0;
+	$is_home     = is_front_page() || is_home();
+	$is_issues   = function_exists( 'altijara_is_issues_archive_view' ) && altijara_is_issues_archive_view();
+	echo '<ul class="sections-drawer-list" id="sectionsDrawerList" data-wp-menu="1">';
+	foreach ( altijara_default_primary_nav_blueprint() as $row ) {
+		$resolved = altijara_resolve_blueprint_item( $row );
+		if ( empty( $resolved['url'] ) ) {
+			continue;
+		}
+		$label   = isset( $row['label'] ) ? (string) $row['label'] : '';
+		$type    = isset( $row['type'] ) ? (string) $row['type'] : '';
+		$active  = '';
+		if ( ( 'home' === $type && $is_home ) || ( 'issues' === $type && $is_issues ) || ( 'category_key' === $type && $current_cat && (int) ( $resolved['object_id'] ?? 0 ) === $current_cat ) ) {
+			$active = ' is-active';
+		}
+		printf(
+			'<li><a href="%1$s" class="%2$s"><span>%3$s</span><span class="drawer-caret" aria-hidden="true">‹</span></a></li>',
+			esc_url( $resolved['url'] ),
+			esc_attr( trim( $active ) ),
+			esc_html( $label )
+		);
+	}
+	echo '</ul>';
+}
+
+/**
+ * Render drawer utility links from the top-bar blueprint.
+ */
+function altijara_render_drawer_utility_from_blueprint() {
+	if ( ! function_exists( 'altijara_default_utility_nav_blueprint' ) || ! function_exists( 'altijara_resolve_blueprint_item' ) ) {
+		echo '<ul class="sections-drawer-list" id="sectionsDrawerUtility" data-wp-menu="0"></ul>';
+		return;
+	}
+	echo '<ul class="sections-drawer-list" id="sectionsDrawerUtility" data-wp-menu="1">';
+	foreach ( altijara_default_utility_nav_blueprint() as $row ) {
+		$resolved = altijara_resolve_blueprint_item( $row );
+		if ( empty( $resolved['url'] ) ) {
+			continue;
+		}
+		$label = isset( $row['label'] ) ? (string) $row['label'] : '';
+		printf(
+			'<li><a href="%1$s"><span>%2$s</span><span class="drawer-caret" aria-hidden="true">‹</span></a></li>',
+			esc_url( $resolved['url'] ),
+			esc_html( $label )
+		);
+	}
+	echo '</ul>';
+}
+
+/**
+ * Whether a menu location has enough items (or falls back to blueprint).
+ *
+ * @param string $location Location.
+ * @param int    $min      Minimum items.
+ * @return bool
+ */
+function altijara_drawer_menu_is_usable( $location, $min = 5 ) {
+	$locations = get_nav_menu_locations();
+	$menu_id   = ( ! empty( $locations[ $location ] ) ) ? (int) $locations[ $location ] : 0;
+	if ( ! $menu_id ) {
+		return false;
+	}
+	$items = wp_get_nav_menu_items( $menu_id );
+	$count = is_array( $items ) ? count( $items ) : 0;
+	return $count >= $min;
+}
+
+/**
  * Render mobile drawer lists from WP menus.
  */
 function altijara_render_mobile_drawer_markup() {
@@ -373,7 +448,7 @@ function altijara_render_mobile_drawer_markup() {
 		<div class="sections-drawer-body">
 			<p class="sections-drawer-group-label"><?php esc_html_e( 'تصفح الأقسام', 'altijara' ); ?></p>
 			<?php
-			if ( altijara_has_nav_menu( $main_loc ) ) {
+			if ( altijara_drawer_menu_is_usable( $main_loc, 8 ) ) {
 				wp_nav_menu(
 					array(
 						'theme_location' => $main_loc,
@@ -386,12 +461,12 @@ function altijara_render_mobile_drawer_markup() {
 					)
 				);
 			} else {
-				echo '<ul class="sections-drawer-list" id="sectionsDrawerList" data-wp-menu="0"></ul>';
+				altijara_render_drawer_sections_from_blueprint();
 			}
 			?>
 			<p class="sections-drawer-group-label"><?php esc_html_e( 'روابط تهمك', 'altijara' ); ?></p>
 			<?php
-			if ( altijara_has_nav_menu( $util_loc ) ) {
+			if ( altijara_drawer_menu_is_usable( $util_loc, 2 ) ) {
 				wp_nav_menu(
 					array(
 						'theme_location' => $util_loc,
@@ -404,7 +479,7 @@ function altijara_render_mobile_drawer_markup() {
 					)
 				);
 			} else {
-				echo '<ul class="sections-drawer-list" id="sectionsDrawerUtility" data-wp-menu="0"></ul>';
+				altijara_render_drawer_utility_from_blueprint();
 			}
 			?>
 		</div>

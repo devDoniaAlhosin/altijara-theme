@@ -17,11 +17,17 @@ function isFullHeroCategory(key) {
 }
 
 function layoutCounts(key) {
-  const rec = isFullHeroCategory(key) ? 0 : 3;
-  const spotlight =
-    Number(window.AltijaraCategory?.spotlight) || 1 + rec + FEATURED_COUNT;
-  const newsSize = Number(window.AltijaraCategory?.newsSize) || NEWS_PAGE_SIZE;
-  return { rec, featured: FEATURED_COUNT, spotlight, newsSize, firstBatch: spotlight + newsSize };
+  const meta = window.AltijaraCategory || {};
+  const featured =
+    Number(meta.featuredCount) > 0 ? Number(meta.featuredCount) : FEATURED_COUNT;
+  const rec = isFullHeroCategory(key)
+    ? 0
+    : Number(meta.sidebarCount) > 0
+      ? Number(meta.sidebarCount)
+      : 3;
+  const spotlight = Number(meta.spotlight) || 1 + rec + featured;
+  const newsSize = Number(meta.newsSize) || NEWS_PAGE_SIZE;
+  return { rec, featured, spotlight, newsSize, firstBatch: spotlight + newsSize };
 }
 let currentPage = 1;
 let totalPages = 1;
@@ -100,7 +106,11 @@ function initCategoryFromUrl() {
   applyCategoryLabels(catData.title);
 
   const topGrid = document.querySelector('.cat-top-grid');
-  if (topGrid) topGrid.classList.toggle('is-hero-full', isFullHeroCategory(catKey));
+  if (topGrid) {
+    const full = isFullHeroCategory(catKey);
+    topGrid.classList.toggle('is-hero-full', full);
+    if (full) topGrid.classList.remove('is-hero-solo');
+  }
 
   const isFollowed = localStorage.getItem(`followed_cat_${catKey}`) === 'true';
   const btnFollow = document.getElementById('btnFollowCat');
@@ -121,7 +131,11 @@ async function loadCategoryLiveContent() {
     const { data } = getCurrentCategory();
     if (data?.title) applyCategoryLabels(data.title);
     const topGrid = document.querySelector('.cat-top-grid');
-    if (topGrid) topGrid.classList.toggle('is-hero-full', isFullHeroCategory());
+    if (topGrid) {
+      const full = isFullHeroCategory();
+      topGrid.classList.toggle('is-hero-full', full);
+      if (full) topGrid.classList.remove('is-hero-solo');
+    }
     const meta = window.AltijaraCategory;
     currentPage = Math.max(1, Number(meta.page) || 1);
     totalPages = Math.max(1, Number(meta.totalPages) || newsPagesFromTotal(meta.total || 0));
@@ -260,8 +274,18 @@ function fillNewIssue() {
   const list = document.getElementById('catNewIssueList');
   if (!list) return;
 
-  const issues = (window.AltijaraIssues || window.AltijaraRecentIssues || [])
-    .filter((i) => i && (i.cover || i.src || i.flipbook || i.link))
+  const recent = Array.isArray(window.AltijaraRecentIssues) ? window.AltijaraRecentIssues : [];
+  const all = Array.isArray(window.AltijaraIssues) ? window.AltijaraIssues : [];
+  const source = recent.length ? recent : all;
+  const seen = new Set();
+  const issues = source
+    .filter((i) => i && (i.cover || i.src))
+    .filter((i) => {
+      const key = String(i.cover || i.src);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .slice(0, 8);
   const widget = list.closest('.cat-new-issue-widget');
   if (!issues.length) {
@@ -277,21 +301,25 @@ function fillNewIssue() {
   const arrows = widget?.querySelector('.cat-new-issue-arrows');
   if (arrows) arrows.hidden = issues.length < 2;
 
-  const themeBase =
-    (window.AltijaraTheme && window.AltijaraTheme.urls && window.AltijaraTheme.urls.theme) || '';
-  const fallbackImg = themeBase
-    ? `${themeBase}/assets/images/issue-730-clean.png`
-    : 'assets/images/issue-730-clean.png';
-
   const syncArrows = () => {
-    if (prev) prev.classList.remove('is-accent');
-    if (next) next.classList.toggle('is-accent', issues.length > 1);
+    if (prev) {
+      prev.disabled = issues.length < 2;
+      prev.classList.toggle('is-accent', false);
+    }
+    if (next) {
+      next.disabled = issues.length < 2;
+      next.classList.toggle('is-accent', issues.length > 1);
+    }
   };
 
   const paintCover = (issue, { skeletonFirst = false } = {}) => {
-    const href = issue.flipbook || issue.link || '#';
+    const href = issue.flipbook || issue.link || issue.permalink || '#';
     const title = String(issue.title || `العدد ${issue.number || ''}`).replace(/"/g, '&quot;');
-    const coverSrc = issue.cover || issue.src || '';
+    const coverSrc = String(issue.cover || issue.src || '');
+    if (!coverSrc) {
+      busy = false;
+      return;
+    }
     let cover = list.querySelector('a.cat-new-issue-cover');
     let img = cover && cover.querySelector('img');
 
@@ -311,12 +339,18 @@ function fillNewIssue() {
       img.alt = title;
     }
 
-    if (!cover || !img) return;
+    if (!cover || !img) {
+      busy = false;
+      return;
+    }
 
     const startedAt = skeletonFirst ? Date.now() : 0;
-    const minSkeletonMs = 280;
+    const minSkeletonMs = 220;
+    let finished = false;
 
     const finish = () => {
+      if (finished) return;
+      finished = true;
       const reveal = () => {
         cover.classList.remove('is-switching');
         cover.classList.add('is-ready');
@@ -336,32 +370,43 @@ function fillNewIssue() {
       cover.classList.add('is-switching');
       img.onload = null;
       img.onerror = null;
-      // Clear src so cached images still show skeleton briefly.
-      img.removeAttribute('src');
     }
 
     img.onerror = () => {
       img.onerror = null;
-      img.src = fallbackImg;
+      finish();
     };
     img.onload = finish;
 
+    // Cache-bust only when switching so the same URL still reflows.
+    const nextSrc = skeletonFirst && img.getAttribute('src') === coverSrc
+      ? `${coverSrc}${coverSrc.indexOf('?') >= 0 ? '&' : '?'}_t=${Date.now()}`
+      : coverSrc;
+
     requestAnimationFrame(() => {
-      img.src = coverSrc || fallbackImg;
+      img.src = nextSrc;
       if (img.complete && img.naturalWidth) finish();
+      // Safety: never leave arrows stuck.
+      setTimeout(() => {
+        if (busy) finish();
+      }, 2500);
     });
   };
 
   const show = (nextIndex, fromClick = false) => {
     if (busy && fromClick) return;
-    busy = fromClick;
+    if (issues.length < 2 && fromClick) return;
+    busy = !!fromClick;
     index = (nextIndex + issues.length) % issues.length;
     paintCover(issues[index], { skeletonFirst: fromClick });
   };
 
-  // Keep SSR cover on first paint; only skeleton when user clicks arrows.
+  // Align index with SSR first cover when possible.
   const ssrCover = list.querySelector('a.cat-new-issue-cover img[src]');
   if (ssrCover) {
+    const ssrSrc = ssrCover.getAttribute('src') || '';
+    const matchIdx = issues.findIndex((i) => (i.cover || i.src) === ssrSrc);
+    if (matchIdx >= 0) index = matchIdx;
     const cover = ssrCover.closest('.cat-new-issue-cover');
     if (ssrCover.complete && ssrCover.naturalWidth) {
       cover && cover.classList.add('is-ready');
@@ -374,8 +419,14 @@ function fillNewIssue() {
 
   syncArrows();
 
-  if (prev) prev.onclick = () => show(index - 1, true);
-  if (next) next.onclick = () => show(index + 1, true);
+  if (prev) prev.onclick = (e) => {
+    e.preventDefault();
+    show(index - 1, true);
+  };
+  if (next) next.onclick = (e) => {
+    e.preventDefault();
+    show(index + 1, true);
+  };
 }
 
 async function fillMostRead() {
@@ -583,13 +634,14 @@ async function goToCategoryPage(page, opts = {}) {
 
   pagingBusy = true;
   setPaginationLoading(true);
-  showNewsSkeleton();
 
   const counts = layoutCounts();
   const newsSize = Number(window.AltijaraCategory?.newsSize) || NEWS_PAGE_SIZE;
   const spotlight = Number(window.AltijaraCategory?.spotlight) || counts.spotlight;
   const offset = target === 1 ? 0 : spotlight + (target - 1) * newsSize;
   const perPage = target === 1 ? spotlight + newsSize : newsSize;
+
+  showNewsSkeleton(newsSize);
 
   try {
     const pageData = await fetchCategoryPage(wpId, perPage, 1, offset);
@@ -617,10 +669,15 @@ async function goToCategoryPage(page, opts = {}) {
       updateCategoryPageUrl(target);
     }
 
-    const list = document.getElementById('catNewsList');
-    if (list) {
-      list.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    requestAnimationFrame(() => {
+      const newsCol =
+        document.querySelector('.cat-news-col') ||
+        document.querySelector('.cat-section-bar') ||
+        document.getElementById('catNewsList');
+      if (newsCol) {
+        newsCol.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
   } catch (err) {
     console.warn('Category pagination failed:', err);
     hideNewsSkeleton();

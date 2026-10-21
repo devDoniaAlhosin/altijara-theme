@@ -246,8 +246,18 @@
     const list = document.getElementById('catNewIssueList');
     if (!list) return;
 
-    const issues = (window.AltijaraIssues || window.AltijaraRecentIssues || [])
-      .filter((i) => i && (i.cover || i.src || i.flipbook || i.link))
+    const recent = Array.isArray(window.AltijaraRecentIssues) ? window.AltijaraRecentIssues : [];
+    const all = Array.isArray(window.AltijaraIssues) ? window.AltijaraIssues : [];
+    const source = recent.length ? recent : all;
+    const seen = new Set();
+    const issues = source
+      .filter((i) => i && (i.cover || i.src))
+      .filter((i) => {
+        const key = String(i.cover || i.src);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
       .slice(0, 8);
     const widget = list.closest('.cat-new-issue-widget');
     if (!issues.length) {
@@ -263,21 +273,25 @@
     const arrows = widget && widget.querySelector('.cat-new-issue-arrows');
     if (arrows) arrows.hidden = issues.length < 2;
 
-    const themeBase =
-      (window.AltijaraTheme && window.AltijaraTheme.urls && window.AltijaraTheme.urls.theme) || '';
-    const fallbackImg = themeBase
-      ? `${themeBase}/assets/images/issue-730-clean.png`
-      : 'assets/images/issue-730-clean.png';
-
     const syncArrows = () => {
-      if (prev) prev.classList.remove('is-accent');
-      if (next) next.classList.toggle('is-accent', issues.length > 1);
+      if (prev) {
+        prev.disabled = issues.length < 2;
+        prev.classList.toggle('is-accent', false);
+      }
+      if (next) {
+        next.disabled = issues.length < 2;
+        next.classList.toggle('is-accent', issues.length > 1);
+      }
     };
 
     const paintCover = (issue, skeletonFirst) => {
-      const href = issue.flipbook || issue.link || '#';
+      const href = issue.flipbook || issue.link || issue.permalink || '#';
       const title = issue.title || `العدد ${issue.number || ''}`;
-      const coverSrc = issue.cover || issue.src || '';
+      const coverSrc = String(issue.cover || issue.src || '');
+      if (!coverSrc) {
+        busy = false;
+        return;
+      }
       let cover = list.querySelector('a.cat-new-issue-cover');
       let img = cover && cover.querySelector('img');
 
@@ -297,12 +311,18 @@
         img.alt = title;
       }
 
-      if (!cover || !img) return;
+      if (!cover || !img) {
+        busy = false;
+        return;
+      }
 
       const startedAt = skeletonFirst ? Date.now() : 0;
-      const minSkeletonMs = 280;
+      const minSkeletonMs = 220;
+      let finished = false;
 
       const finish = () => {
+        if (finished) return;
+        finished = true;
         const reveal = () => {
           cover.classList.remove('is-switching');
           cover.classList.add('is-ready');
@@ -322,23 +342,30 @@
         cover.classList.add('is-switching');
         img.onload = null;
         img.onerror = null;
-        img.removeAttribute('src');
       }
 
       img.onerror = () => {
         img.onerror = null;
-        img.src = fallbackImg;
+        finish();
       };
       img.onload = finish;
 
+      const nextSrc = skeletonFirst && img.getAttribute('src') === coverSrc
+        ? `${coverSrc}${coverSrc.indexOf('?') >= 0 ? '&' : '?'}_t=${Date.now()}`
+        : coverSrc;
+
       requestAnimationFrame(() => {
-        img.src = coverSrc || fallbackImg;
+        img.src = nextSrc;
         if (img.complete && img.naturalWidth) finish();
+        setTimeout(() => {
+          if (busy) finish();
+        }, 2500);
       });
     };
 
     const show = (nextIndex, fromClick) => {
       if (busy && fromClick) return;
+      if (issues.length < 2 && fromClick) return;
       busy = !!fromClick;
       index = (nextIndex + issues.length) % issues.length;
       paintCover(issues[index], !!fromClick);
@@ -346,6 +373,9 @@
 
     const ssrCover = list.querySelector('a.cat-new-issue-cover img[src]');
     if (ssrCover) {
+      const ssrSrc = ssrCover.getAttribute('src') || '';
+      const matchIdx = issues.findIndex((i) => (i.cover || i.src) === ssrSrc);
+      if (matchIdx >= 0) index = matchIdx;
       const cover = ssrCover.closest('.cat-new-issue-cover');
       if (ssrCover.complete && ssrCover.naturalWidth) {
         if (cover) cover.classList.add('is-ready');
@@ -359,8 +389,18 @@
     }
 
     syncArrows();
-    if (prev) prev.onclick = () => show(index - 1, true);
-    if (next) next.onclick = () => show(index + 1, true);
+    if (prev) {
+      prev.onclick = (e) => {
+        e.preventDefault();
+        show(index - 1, true);
+      };
+    }
+    if (next) {
+      next.onclick = (e) => {
+        e.preventDefault();
+        show(index + 1, true);
+      };
+    }
   }
 
   function fillMostRead(posts) {
@@ -385,6 +425,36 @@
     `).join('');
   }
 
+  function initRelatedLoadMore() {
+    const section = document.querySelector('.bottom-related-section');
+    const btn = document.getElementById('relatedLoadMoreBtn');
+    const wrap = document.getElementById('relatedLoadMoreWrap');
+    if (!section || !btn) return;
+
+    const perLoad =
+      Number(section.getAttribute('data-related-per-load')) ||
+      Number(window.AltijaraArticle?.relatedPerLoad) ||
+      2;
+
+    btn.addEventListener('click', () => {
+      const hidden = section.querySelectorAll('.bottom-news-card.is-related-more[hidden]');
+      if (!hidden.length) {
+        if (wrap) wrap.hidden = true;
+        return;
+      }
+      Array.from(hidden)
+        .slice(0, perLoad)
+        .forEach((card) => {
+          card.hidden = false;
+          card.classList.remove('is-related-more');
+        });
+      const stillHidden = section.querySelectorAll('.bottom-news-card.is-related-more[hidden]');
+      if (!stillHidden.length && wrap) {
+        wrap.hidden = true;
+      }
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
     if (WP.localizeArticleLinks) WP.localizeArticleLinks(document);
 
@@ -393,6 +463,7 @@
       const mainCol = document.getElementById('articleMainCol');
       if (mainCol) mainCol.classList.remove('is-skeleton');
       fillNewIssue();
+      initRelatedLoadMore();
       return;
     }
 

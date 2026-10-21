@@ -72,8 +72,10 @@ function altijara_resolve_blueprint_item( $item ) {
 
 	if ( 'page_slug' === $type ) {
 		$slug = sanitize_title( $item['slug'] ?? '' );
-		$page = get_page_by_path( $slug );
-		if ( $page ) {
+		$page = function_exists( 'altijara_get_utility_page' )
+			? altijara_get_utility_page( $slug )
+			: get_page_by_path( $slug );
+		if ( $page instanceof WP_Post ) {
 			return array(
 				'url'       => get_permalink( $page ),
 				'object'    => 'page',
@@ -433,6 +435,94 @@ function altijara_rebuild_utility_nav_menu() {
 }
 
 /**
+ * Wipe and rebuild footer section + quick-link menus from blueprints.
+ *
+ * @return array{sections:array<string,mixed>,quick:array<string,mixed>,pending:string[]}
+ */
+function altijara_rebuild_footer_menus() {
+	$report = array(
+		'sections' => array( 'menu_id' => 0, 'items' => 0 ),
+		'quick'    => array( 'menu_id' => 0, 'items' => 0 ),
+		'pending'  => array(),
+	);
+
+	if ( function_exists( 'altijara_detect_category_map' ) ) {
+		$map = altijara_detect_category_map( true );
+		altijara_update_options( array( 'category_map' => $map ) );
+	}
+
+	$specs = array(
+		'sections' => array(
+			'name'      => 'Altijara — أقسام التذييل',
+			'location'  => 'footer',
+			'blueprint' => function_exists( 'altijara_default_footer_sections_blueprint' ) ? altijara_default_footer_sections_blueprint() : array(),
+		),
+		'quick'    => array(
+			'name'      => 'Altijara — روابط تهمك',
+			'location'  => 'footer_quick',
+			'blueprint' => function_exists( 'altijara_default_footer_quick_blueprint' ) ? altijara_default_footer_quick_blueprint() : array(),
+		),
+	);
+
+	foreach ( $specs as $key => $spec ) {
+		$menu = wp_get_nav_menu_object( $spec['name'] );
+		if ( ! $menu ) {
+			$created = wp_create_nav_menu( $spec['name'] );
+			if ( is_wp_error( $created ) ) {
+				$report['pending'][] = $spec['name'] . ':create_failed';
+				continue;
+			}
+			$menu_id = (int) $created;
+		} else {
+			$menu_id = (int) $menu->term_id;
+		}
+
+		$locations = get_nav_menu_locations();
+		if ( ! empty( $locations[ $spec['location'] ] ) ) {
+			$menu_id = (int) $locations[ $spec['location'] ];
+		}
+
+		$existing = wp_get_nav_menu_items( $menu_id );
+		if ( is_array( $existing ) ) {
+			foreach ( $existing as $item ) {
+				wp_delete_post( (int) $item->db_id, true );
+			}
+		}
+
+		$position = 1;
+		$items    = 0;
+		foreach ( (array) $spec['blueprint'] as $row ) {
+			$resolved = altijara_resolve_blueprint_item( $row );
+			if ( empty( $resolved['url'] ) ) {
+				$report['pending'][] = ( $row['label'] ?? '' ) . ' (' . ( $resolved['status'] ?? 'pending' ) . ')';
+				continue;
+			}
+			$args    = altijara_nav_menu_item_args( $row, $resolved, $position );
+			$item_id = wp_update_nav_menu_item( $menu_id, 0, $args );
+			if ( ! is_wp_error( $item_id ) ) {
+				altijara_force_nav_menu_item_meta( (int) $item_id, $args );
+				++$items;
+				++$position;
+			}
+		}
+
+		$locs = get_theme_mod( 'nav_menu_locations' );
+		if ( ! is_array( $locs ) ) {
+			$locs = array();
+		}
+		$locs[ $spec['location'] ] = $menu_id;
+		set_theme_mod( 'nav_menu_locations', $locs );
+
+		$report[ $key ] = array(
+			'menu_id' => $menu_id,
+			'items'   => $items,
+		);
+	}
+
+	return $report;
+}
+
+/**
  * Wipe and rebuild the primary navbar from the full category blueprint
  * (Home + all section categories + Issues) as real Category taxonomy links.
  *
@@ -553,9 +643,101 @@ function altijara_default_footer_sections_blueprint() {
 }
 
 /**
- * Ensure utility pages exist with matching templates (idempotent).
+ * Whether a page already uses the expected Altijara template.
  *
- * @return array{created:int,existed:int,template_set:int,errors:string[],details:array<string,string>}
+ * @param WP_Post $page     Page.
+ * @param string  $template Template file e.g. page-about.php.
+ * @return bool
+ */
+function altijara_page_uses_theme_template( $page, $template ) {
+	if ( ! $page instanceof WP_Post ) {
+		return false;
+	}
+	$current = (string) get_post_meta( $page->ID, '_wp_page_template', true );
+	return $current === $template;
+}
+
+/**
+ * Next free page slug: about, about-2, about-3…
+ *
+ * @param string $base Base slug.
+ * @return string
+ */
+function altijara_next_free_page_slug( $base ) {
+	$base = sanitize_title( $base );
+	if ( ! get_page_by_path( $base ) ) {
+		return $base;
+	}
+	$n = 2;
+	while ( $n < 50 ) {
+		$candidate = $base . '-' . $n;
+		if ( ! get_page_by_path( $candidate ) ) {
+			return $candidate;
+		}
+		++$n;
+	}
+	return $base . '-' . wp_generate_password( 4, false, false );
+}
+
+/**
+ * Seed page meta defaults when empty.
+ *
+ * @param int    $page_id  Page ID.
+ * @param string $template Template filename.
+ */
+function altijara_seed_utility_page_meta( $page_id, $template ) {
+	$page_id = absint( $page_id );
+	if ( ! $page_id || ! defined( 'ALTIJARA_PAGE_META_KEY' ) ) {
+		return;
+	}
+	$existing = get_post_meta( $page_id, ALTIJARA_PAGE_META_KEY, true );
+	if ( is_array( $existing ) && ! empty( $existing ) ) {
+		return;
+	}
+	$schema = '';
+	if ( function_exists( 'altijara_get_page_schema_key' ) ) {
+		$schema = altijara_get_page_schema_key( $page_id );
+	}
+	if ( ! $schema && $template && function_exists( 'altijara_page_template_map' ) ) {
+		$map    = altijara_page_template_map();
+		$schema = isset( $map[ $template ] ) ? $map[ $template ] : '';
+	}
+	if ( ! $schema && preg_match( '/page-([a-z0-9-]+)\.php$/', $template, $m ) ) {
+		$schema = $m[1];
+	}
+	if ( ! $schema || ! function_exists( 'altijara_page_meta_defaults' ) ) {
+		return;
+	}
+	$defaults = altijara_page_meta_defaults( $schema );
+	if ( $defaults ) {
+		update_post_meta( $page_id, ALTIJARA_PAGE_META_KEY, $defaults );
+	}
+}
+
+/**
+ * Get theme-owned utility page by logical slug (about → about or about-2).
+ *
+ * @param string $logical_slug Blueprint slug.
+ * @return WP_Post|null
+ */
+function altijara_get_utility_page( $logical_slug ) {
+	$logical_slug = sanitize_title( $logical_slug );
+	$ids          = altijara_get_option( 'utility_page_ids', array() );
+	if ( is_array( $ids ) && ! empty( $ids[ $logical_slug ] ) ) {
+		$post = get_post( (int) $ids[ $logical_slug ] );
+		if ( $post instanceof WP_Post && 'publish' === $post->post_status ) {
+			return $post;
+		}
+	}
+	$page = get_page_by_path( $logical_slug );
+	return ( $page instanceof WP_Post ) ? $page : null;
+}
+
+/**
+ * Ensure utility pages exist with matching templates (idempotent).
+ * If about/contact already exist without Altijara templates, create about-2 / contact-2.
+ *
+ * @return array{created:int,existed:int,template_set:int,errors:string[],details:array<string,string>,ids:array<string,int>}
  */
 function altijara_ensure_utility_pages() {
 	$report = array(
@@ -564,55 +746,117 @@ function altijara_ensure_utility_pages() {
 		'template_set' => 0,
 		'errors'       => array(),
 		'details'      => array(),
+		'ids'          => array(),
 	);
 
 	if ( ! function_exists( 'altijara_default_utility_pages_blueprint' ) ) {
 		return $report;
 	}
 
+	$ids = altijara_get_option( 'utility_page_ids', array() );
+	if ( ! is_array( $ids ) ) {
+		$ids = array();
+	}
+
 	foreach ( altijara_default_utility_pages_blueprint() as $row ) {
-		$slug     = sanitize_title( $row['slug'] ?? '' );
-		$title    = isset( $row['title'] ) ? (string) $row['title'] : $slug;
+		$logical  = sanitize_title( $row['slug'] ?? '' );
+		$title    = isset( $row['title'] ) ? (string) $row['title'] : $logical;
 		$template = isset( $row['template'] ) ? sanitize_file_name( $row['template'] ) : '';
-		if ( ! $slug || ! $template ) {
+		if ( ! $logical || ! $template ) {
 			continue;
 		}
 
-		$page = get_page_by_path( $slug );
-		if ( $page instanceof WP_Post ) {
-			++$report['existed'];
-			$report['details'][ $slug ] = 'existed';
+		// Prefer previously resolved theme page ID.
+		$page = null;
+		if ( ! empty( $ids[ $logical ] ) ) {
+			$maybe = get_post( (int) $ids[ $logical ] );
+			if ( $maybe instanceof WP_Post && 'trash' !== $maybe->post_status ) {
+				$page = $maybe;
+			}
+		}
+
+		if ( ! $page ) {
+			$by_path = get_page_by_path( $logical );
+			if ( $by_path instanceof WP_Post && altijara_page_uses_theme_template( $by_path, $template ) ) {
+				$page = $by_path;
+			} elseif ( $by_path instanceof WP_Post ) {
+				$current = (string) get_post_meta( $by_path->ID, '_wp_page_template', true );
+				// Reclaim default/empty template pages for the theme.
+				if ( '' === $current || 'default' === $current ) {
+					update_post_meta( $by_path->ID, '_wp_page_template', $template );
+					$page = $by_path;
+					++$report['template_set'];
+					$report['details'][ $logical ] = 'existed_template_set';
+				} else {
+					// Conflict: create about-2 / contact-2…
+					$new_slug = altijara_next_free_page_slug( $logical );
+					$page_id  = wp_insert_post(
+						array(
+							'post_title'   => $title,
+							'post_name'    => $new_slug,
+							'post_status'  => 'publish',
+							'post_type'    => 'page',
+							'post_content' => '',
+						),
+						true
+					);
+					if ( is_wp_error( $page_id ) ) {
+						$report['errors'][]         = $logical . ': ' . $page_id->get_error_message();
+						$report['details'][ $logical ] = 'error';
+						continue;
+					}
+					update_post_meta( (int) $page_id, '_wp_page_template', $template );
+					altijara_seed_utility_page_meta( (int) $page_id, $template );
+					$page = get_post( (int) $page_id );
+					++$report['created'];
+					++$report['template_set'];
+					$report['details'][ $logical ] = 'created_conflict:' . $new_slug;
+				}
+			}
+		}
+
+		if ( ! $page ) {
+			$page_id = wp_insert_post(
+				array(
+					'post_title'   => $title,
+					'post_name'    => $logical,
+					'post_status'  => 'publish',
+					'post_type'    => 'page',
+					'post_content' => '',
+				),
+				true
+			);
+			if ( is_wp_error( $page_id ) ) {
+				$report['errors'][]            = $logical . ': ' . $page_id->get_error_message();
+				$report['details'][ $logical ] = 'error';
+				continue;
+			}
+			update_post_meta( (int) $page_id, '_wp_page_template', $template );
+			altijara_seed_utility_page_meta( (int) $page_id, $template );
+			$page = get_post( (int) $page_id );
+			++$report['created'];
+			++$report['template_set'];
+			$report['details'][ $logical ] = 'created';
+		} else {
+			if ( empty( $report['details'][ $logical ] ) ) {
+				++$report['existed'];
+				$report['details'][ $logical ] = 'existed';
+			}
 			$current = (string) get_post_meta( $page->ID, '_wp_page_template', true );
-			if ( '' === $current || 'default' === $current ) {
+			if ( $current !== $template ) {
 				update_post_meta( $page->ID, '_wp_page_template', $template );
 				++$report['template_set'];
-				$report['details'][ $slug ] = 'existed_template_set';
 			}
-			continue;
+			altijara_seed_utility_page_meta( (int) $page->ID, $template );
 		}
 
-		$page_id = wp_insert_post(
-			array(
-				'post_title'  => $title,
-				'post_name'   => $slug,
-				'post_status' => 'publish',
-				'post_type'   => 'page',
-				'post_content' => '',
-			),
-			true
-		);
-
-		if ( is_wp_error( $page_id ) ) {
-			$report['errors'][]         = $slug . ': ' . $page_id->get_error_message();
-			$report['details'][ $slug ] = 'error';
-			continue;
+		if ( $page instanceof WP_Post ) {
+			$ids[ $logical ]           = (int) $page->ID;
+			$report['ids'][ $logical ] = (int) $page->ID;
 		}
-
-		update_post_meta( (int) $page_id, '_wp_page_template', $template );
-		++$report['created'];
-		++$report['template_set'];
-		$report['details'][ $slug ] = 'created';
 	}
+
+	altijara_update_options( array( 'utility_page_ids' => $ids ) );
 
 	return $report;
 }
@@ -652,6 +896,11 @@ function altijara_run_theme_setup() {
 		$report['pending'] = array_merge( $report['pending'], $report['pages']['errors'] );
 	}
 
+	// 2a) Home 2 page as static front page (metabox-controlled homepage).
+	if ( function_exists( 'altijara_ensure_home2_front_page' ) ) {
+		$report['home2'] = altijara_ensure_home2_front_page();
+	}
+
 	// 2b) Seed category map from live terms when present.
 	if ( function_exists( 'altijara_detect_category_map' ) ) {
 		$map = altijara_detect_category_map( true );
@@ -659,55 +908,27 @@ function altijara_run_theme_setup() {
 		$report['category_map'] = 'detected';
 	}
 
-	// 3) Menus.
-	$menus = array(
-		array(
-			'name'      => 'Altijara — القائمة الرئيسية',
-			'location'  => 'primary',
-			'blueprint' => altijara_default_primary_nav_blueprint(),
-			'also'      => array( 'mobile' ),
-		),
-		array(
-			'name'      => 'Altijara — الشريط العلوي',
-			'location'  => 'top_bar',
-			'blueprint' => altijara_default_utility_nav_blueprint(),
-			'also'      => array( 'utility' ),
-		),
-		array(
-			'name'      => 'Altijara — أقسام التذييل',
-			'location'  => 'footer',
-			'blueprint' => altijara_default_footer_sections_blueprint(),
-			'also'      => array(),
-		),
-		array(
-			'name'      => 'Altijara — روابط تهمك',
-			'location'  => 'footer_quick',
-			'blueprint' => altijara_default_footer_quick_blueprint(),
-			'also'      => array(),
-		),
-	);
-
-	foreach ( $menus as $spec ) {
-		$result = altijara_ensure_nav_menu( $spec['name'], $spec['blueprint'] );
-		$assigned = false;
-		if ( $result['menu_id'] ) {
-			$assigned = altijara_assign_menu_location_if_empty( $spec['location'], $result['menu_id'] );
-			foreach ( $spec['also'] as $extra_loc ) {
-				altijara_assign_menu_location_if_empty( $extra_loc, $result['menu_id'] );
-			}
-		}
-		$report['menus'][ $spec['location'] ] = array(
-			'name'        => $spec['name'],
-			'created'     => $result['created'],
-			'items_added' => $result['items_added'],
-			'skipped'     => $result['skipped'],
-			'assigned'    => $assigned,
-			'pending'     => $result['pending'],
-		);
-		$report['pending'] = array_merge( $report['pending'], $result['pending'] );
+	// 2c) Seed magazine issues CPT + featured images from media / issues_data.json.
+	// after_switch_theme may run before init — register CPT first.
+	if ( function_exists( 'altijara_register_issue_cpt' ) ) {
+		altijara_register_issue_cpt();
+	}
+	if ( function_exists( 'altijara_ingest_issues_from_json' ) ) {
+		$report['issues'] = altijara_ingest_issues_from_json( true );
 	}
 
-	// Refresh existing menu item URLs after category map detection.
+	// 3) Force-rebuild theme-owned menus (upload/reactivate must refresh stale Custom Links).
+	$report['menus']['primary']      = altijara_rebuild_primary_nav_menu();
+	$report['menus']['top_bar']      = altijara_rebuild_utility_nav_menu();
+	$report['menus']['footer']       = altijara_rebuild_footer_menus();
+	$report['pending']               = array_merge(
+		$report['pending'],
+		(array) ( $report['menus']['primary']['pending'] ?? array() ),
+		(array) ( $report['menus']['top_bar']['pending'] ?? array() ),
+		(array) ( $report['menus']['footer']['pending'] ?? array() )
+	);
+
+	// Refresh any remaining category taxonomy links.
 	$report['menu_sync'] = altijara_sync_nav_menus_from_category_map();
 
 	// 4) Flush rewrites once per setup version (issue CPT archive).
@@ -731,6 +952,32 @@ function altijara_run_theme_setup() {
 	return $report;
 }
 add_action( 'after_switch_theme', 'altijara_run_theme_setup' );
+
+/**
+ * Run setup when theme zip is uploaded over an already-active theme
+ * (after_switch_theme does not fire). Compares ALTIJARA_THEME_VERSION.
+ */
+function altijara_maybe_run_versioned_setup() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$ver   = defined( 'ALTIJARA_THEME_VERSION' ) ? ALTIJARA_THEME_VERSION : '1';
+	$state = get_option( ALTIJARA_SETUP_FLAG, array() );
+	if ( ! is_array( $state ) ) {
+		$state = array();
+	}
+	if ( ( $state['version'] ?? '' ) === $ver && ! empty( $state['last_run'] ) ) {
+		return;
+	}
+	// Avoid recursion / double run within same request.
+	if ( get_transient( 'altijara_setup_running' ) ) {
+		return;
+	}
+	set_transient( 'altijara_setup_running', 1, 60 );
+	altijara_run_theme_setup();
+	delete_transient( 'altijara_setup_running' );
+}
+add_action( 'admin_init', 'altijara_maybe_run_versioned_setup', 5 );
 
 /**
  * Admin notice after activation.
@@ -816,3 +1063,68 @@ function altijara_admin_rerun_setup() {
 	altijara_run_theme_setup();
 }
 add_action( 'admin_init', 'altijara_admin_rerun_setup' );
+
+/**
+ * Manual issues ingest from Tools tab.
+ */
+function altijara_admin_ingest_issues() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( empty( $_POST['altijara_ingest_issues'] ) ) {
+		return;
+	}
+	if ( ! isset( $_POST['altijara_settings_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['altijara_settings_nonce'] ) ), 'altijara_save_settings' ) ) {
+		return;
+	}
+	if ( function_exists( 'altijara_register_issue_cpt' ) ) {
+		altijara_register_issue_cpt();
+	}
+	if ( ! function_exists( 'altijara_ingest_issues_from_json' ) ) {
+		return;
+	}
+	$report = altijara_ingest_issues_from_json( true );
+	set_transient(
+		'altijara_issues_ingest_notice',
+		$report,
+		HOUR_IN_SECONDS
+	);
+}
+add_action( 'admin_init', 'altijara_admin_ingest_issues' );
+
+/**
+ * Admin notice after manual issues ingest.
+ */
+function altijara_issues_ingest_admin_notice() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$report = get_transient( 'altijara_issues_ingest_notice' );
+	if ( ! $report || ! is_array( $report ) ) {
+		return;
+	}
+	delete_transient( 'altijara_issues_ingest_notice' );
+	?>
+	<div class="notice notice-success is-dismissible">
+		<p>
+			<?php
+			printf(
+				/* translators: 1: created, 2: updated, 3: thumbs attached */
+				esc_html__( 'Issues synced — created: %1$d, updated: %2$d, featured images attached: %3$d.', 'altijara' ),
+				(int) ( $report['created'] ?? 0 ),
+				(int) ( $report['updated'] ?? 0 ),
+				(int) ( $report['thumbs'] ?? 0 )
+			);
+			?>
+		</p>
+		<?php if ( ! empty( $report['errors'] ) && is_array( $report['errors'] ) ) : ?>
+			<ul style="list-style:disc;margin-inline-start:1.5em;">
+				<?php foreach ( array_slice( $report['errors'], 0, 10 ) as $err ) : ?>
+					<li><?php echo esc_html( is_scalar( $err ) ? (string) $err : wp_json_encode( $err ) ); ?></li>
+				<?php endforeach; ?>
+			</ul>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+add_action( 'admin_notices', 'altijara_issues_ingest_admin_notice' );

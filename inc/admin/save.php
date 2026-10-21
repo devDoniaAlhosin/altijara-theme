@@ -70,16 +70,20 @@ function altijara_handle_settings_save() {
 			echo '<div class="notice notice-success"><p>' . esc_html__( 'تم حفظ روابط التواصل.', 'altijara' ) . '</p></div>';
 		}
 
+		if ( isset( $_POST['altijara_auth'] ) && is_array( $_POST['altijara_auth'] ) && function_exists( 'altijara_sanitize_auth_settings' ) ) {
+			altijara_update_options( array( 'auth' => altijara_sanitize_auth_settings( wp_unslash( $_POST['altijara_auth'] ) ) ) ); // phpcs:ignore
+			echo '<div class="notice notice-success"><p>' . esc_html__( 'تم حفظ إعدادات تسجيل الدخول الاجتماعي.', 'altijara' ) . '</p></div>';
+		}
+
 		if ( isset( $_POST['altijara_article'] ) && is_array( $_POST['altijara_article'] ) ) {
 			$a = wp_unslash( $_POST['altijara_article'] ); // phpcs:ignore
-			altijara_update_options(
-				array(
-					'article' => array(
-						'show_related'  => ! empty( $a['show_related'] ),
-						'related_count' => isset( $a['related_count'] ) ? max( 1, min( 12, (int) $a['related_count'] ) ) : 2,
-					),
-				)
-			);
+			$clean = function_exists( 'altijara_sanitize_article_settings' )
+				? altijara_sanitize_article_settings( $a )
+				: array(
+					'show_related'  => ! empty( $a['show_related'] ),
+					'related_count' => isset( $a['related_count'] ) ? max( 1, min( 12, (int) $a['related_count'] ) ) : 2,
+				);
+			altijara_update_options( array( 'article' => $clean ) );
 			echo '<div class="notice notice-success"><p>' . esc_html__( 'تم حفظ إعدادات المقال.', 'altijara' ) . '</p></div>';
 		}
 
@@ -199,21 +203,67 @@ function altijara_handle_settings_save() {
 				echo '<div class="notice notice-warning"><p>' . esc_html__( 'Pending:', 'altijara' ) . ' ' . esc_html( implode( ', ', $built['pending'] ) ) . '</p></div>';
 			}
 		}
-		if ( isset( $_POST['altijara_archive_layouts'] ) && is_array( $_POST['altijara_archive_layouts'] ) && function_exists( 'altijara_sanitize_archive_layouts' ) ) {
-			$layouts = altijara_sanitize_archive_layouts( wp_unslash( $_POST['altijara_archive_layouts'] ) ); // phpcs:ignore
+		if ( ! empty( $_POST['altijara_rebuild_footer_nav'] ) && function_exists( 'altijara_rebuild_footer_menus' ) ) {
+			$built    = altijara_rebuild_footer_menus();
+			$sec_n    = (int) ( $built['sections']['items'] ?? 0 );
+			$quick_n  = (int) ( $built['quick']['items'] ?? 0 );
+			echo '<div class="notice notice-success"><p>' . esc_html(
+				sprintf(
+					/* translators: 1: section links, 2: quick links */
+					__( 'Footer menus rebuilt: %1$d section links, %2$d quick links.', 'altijara' ),
+					$sec_n,
+					$quick_n
+				)
+			) . '</p></div>';
+			if ( ! empty( $built['pending'] ) && is_array( $built['pending'] ) ) {
+				echo '<div class="notice notice-warning"><p>' . esc_html__( 'Pending:', 'altijara' ) . ' ' . esc_html( implode( ', ', $built['pending'] ) ) . '</p></div>';
+			}
+		}
+		if ( ! empty( $_POST['altijara_archive_magazine_ids_submitted'] ) || ! empty( $_POST['altijara_archive_counts_submitted'] ) || ! empty( $_POST['altijara_archive_full_hero_submitted'] ) || ! empty( $_POST['altijara_issues_layout_submitted'] ) ) {
+			$magazine_ids = array();
+			if ( isset( $_POST['altijara_archive_magazine_ids'] ) && is_array( $_POST['altijara_archive_magazine_ids'] ) && function_exists( 'altijara_sanitize_archive_magazine_ids' ) ) {
+				$magazine_ids = altijara_sanitize_archive_magazine_ids( wp_unslash( $_POST['altijara_archive_magazine_ids'] ) ); // phpcs:ignore
+			} elseif ( function_exists( 'altijara_sanitize_archive_magazine_ids' ) ) {
+				$magazine_ids = array();
+			}
+
 			$full_hero = array();
 			if ( isset( $_POST['altijara_archive_full_hero'] ) && is_array( $_POST['altijara_archive_full_hero'] ) && function_exists( 'altijara_sanitize_archive_full_hero' ) ) {
 				$full_hero = altijara_sanitize_archive_full_hero( wp_unslash( $_POST['altijara_archive_full_hero'] ) ); // phpcs:ignore
-			} elseif ( function_exists( 'altijara_sanitize_archive_full_hero' ) ) {
-				// Form submitted without any checkbox checked → clear list.
-				$full_hero = array();
 			}
-			altijara_update_options(
-				array(
-					'archive_layouts'   => $layouts,
-					'archive_full_hero' => $full_hero,
-				)
+
+			$counts = function_exists( 'altijara_default_archive_counts' ) ? altijara_default_archive_counts() : array();
+			if ( isset( $_POST['altijara_archive_counts'] ) && is_array( $_POST['altijara_archive_counts'] ) && function_exists( 'altijara_sanitize_archive_counts' ) ) {
+				$counts = altijara_sanitize_archive_counts( wp_unslash( $_POST['altijara_archive_counts'] ) ); // phpcs:ignore
+			}
+
+			$layouts = function_exists( 'altijara_archive_layouts_from_magazine_ids' )
+				? altijara_archive_layouts_from_magazine_ids( $magazine_ids )
+				: array();
+
+			$opt_update = array(
+				'archive_magazine_ids' => $magazine_ids,
+				'archive_layouts'      => $layouts,
+				'archive_full_hero'    => $full_hero,
+				'archive_counts'       => $counts,
 			);
+
+			if ( ! empty( $_POST['altijara_issues_layout_submitted'] ) ) {
+				if ( ! empty( $_POST['altijara_issues_layout_reset'] ) ) {
+					$opt_update['issues_archive_layout'] = array();
+				} elseif ( isset( $_POST['altijara_issues_layout_sections'] ) && is_array( $_POST['altijara_issues_layout_sections'] ) && function_exists( 'altijara_sanitize_layout' ) ) {
+					$order = isset( $_POST['altijara_issues_layout_order'] ) && is_array( $_POST['altijara_issues_layout_order'] )
+						? wp_unslash( $_POST['altijara_issues_layout_order'] ) // phpcs:ignore
+						: array();
+					$opt_update['issues_archive_layout'] = altijara_sanitize_layout(
+						wp_unslash( $_POST['altijara_issues_layout_sections'] ), // phpcs:ignore
+						$order,
+						array( 'lock_hero' => false )
+					);
+				}
+			}
+
+			altijara_update_options( $opt_update );
 			echo '<div class="notice notice-success"><p>' . esc_html__( 'Archive layouts saved.', 'altijara' ) . '</p></div>';
 		}
 }

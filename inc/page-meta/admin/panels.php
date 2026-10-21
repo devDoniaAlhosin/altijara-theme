@@ -21,7 +21,7 @@ function altijara_render_page_meta_box( $post ) {
 	if ( ! $schema ) {
 		echo '<div class="altijara-pm-empty">';
 		echo '<p><strong>' . esc_html__( 'No Altijara template assigned', 'altijara' ) . '</strong></p>';
-		echo '<p class="description">' . esc_html__( 'Open Page Attributes → Template and choose About, Contact, Advertise, Subscribe, or Login. Then you can edit layout copy here.', 'altijara' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Open Page Attributes → Template and choose Home 2, About, Contact, Advertise, Subscribe, or Login. Then you can edit content here.', 'altijara' ) . '</p>';
 		echo '</div>';
 		return;
 	}
@@ -45,6 +45,10 @@ function altijara_render_page_meta_box( $post ) {
 	echo '</div>';
 
 	switch ( $schema ) {
+		case 'home':
+			altijara_render_home2_page_meta_panel( $meta );
+			break;
+
 		case 'about':
 			altijara_page_meta_section_open( 'intro', __( 'Intro & lead', 'altijara' ), true );
 			altijara_page_meta_field_text( 'lead', __( 'Lead paragraph', 'altijara' ), $meta['lead'] ?? '', true, 'text', __( 'Shown under the page heading on the front end.', 'altijara' ) );
@@ -261,4 +265,87 @@ function altijara_render_page_meta_box( $post ) {
 	}
 
 	echo '</div>';
+}
+
+/**
+ * Order-by choices for Home 2 category source.
+ *
+ * @return array<string, string>
+ */
+function altijara_home_meta_orderby_choices() {
+	return array(
+		'date'          => __( 'Latest published', 'altijara' ),
+		'modified'      => __( 'Last modified', 'altijara' ),
+		'title'         => __( 'Title', 'altijara' ),
+		'comment_count' => __( 'Most commented', 'altijara' ),
+		'rand'          => __( 'Random', 'altijara' ),
+	);
+}
+
+/**
+ * Render AJAX post picker (shared chip UI).
+ *
+ * @param string               $name_attr Input name for hidden IDs.
+ * @param string               $ids_csv   Comma-separated IDs.
+ * @param array<string, mixed> $args      post_type, label, placeholder.
+ */
+function altijara_render_admin_post_picker( $name_attr, $ids_csv, $args = array() ) {
+	$post_type   = isset( $args['post_type'] ) ? (string) $args['post_type'] : 'post';
+	$label       = isset( $args['label'] ) ? (string) $args['label'] : __( 'Select posts', 'altijara' );
+	$placeholder = isset( $args['placeholder'] ) ? (string) $args['placeholder'] : __( 'Search by title or ID…', 'altijara' );
+	$ids         = array_values(
+		array_filter(
+			array_map(
+				'absint',
+				preg_split( '/[\s,]+/', (string) $ids_csv ) ?: array()
+			)
+		)
+	);
+	$titles = function_exists( 'altijara_get_post_titles_map' ) ? altijara_get_post_titles_map( $ids ) : array();
+	?>
+	<div class="altijara-post-picker" data-post-type="<?php echo esc_attr( $post_type ); ?>">
+		<label><strong><?php echo esc_html( $label ); ?></strong></label>
+		<input type="hidden" class="altijara-picker-ids" name="<?php echo esc_attr( $name_attr ); ?>" value="<?php echo esc_attr( implode( ',', $ids ) ); ?>">
+		<input type="search" class="altijara-picker-search regular-text" placeholder="<?php echo esc_attr( $placeholder ); ?>" autocomplete="off">
+		<ul class="altijara-picker-results" hidden></ul>
+		<ul class="altijara-picker-selected">
+			<?php foreach ( $ids as $pid ) : ?>
+				<li data-id="<?php echo esc_attr( (string) $pid ); ?>">
+					<span><?php echo esc_html( isset( $titles[ $pid ] ) ? $titles[ $pid ] . ' (#' . $pid . ')' : '#' . $pid ); ?></span>
+					<button type="button" class="button-link-delete altijara-picker-remove">&times;</button>
+				</li>
+			<?php endforeach; ?>
+		</ul>
+		<p class="description"><?php esc_html_e( 'Search by name or type a post ID. Selection order = display order.', 'altijara' ); ?></p>
+	</div>
+	<?php
+}
+
+/**
+ * Home 2 metabox — full JNews-style layout builder.
+ *
+ * @param array<string, mixed> $meta Page meta.
+ */
+function altijara_render_home2_page_meta_panel( array $meta ) {
+	$page_id = altijara_admin_editing_post_id();
+	$pack    = function_exists( 'altijara_get_home2_layout' )
+		? altijara_get_home2_layout( $page_id )
+		: ( function_exists( 'altijara_layout_preset_home' ) ? altijara_layout_preset_home() : array( 'sections' => array(), 'order' => array() ) );
+
+	echo '<input type="hidden" name="altijara_page[layout_submitted]" value="1">';
+	echo '<p class="description" style="margin-top:0;">' . esc_html__( 'Add, reorder, and configure homepage widgets. Page template must be Home 2 and set as Front Page.', 'altijara' ) . '</p>';
+
+	if ( function_exists( 'altijara_render_layout_builder' ) ) {
+		altijara_render_layout_builder(
+			array(
+				'builder_id'   => 'home2_page',
+				'field_prefix' => 'altijara_page[layout_sections]',
+				'order_field'  => 'altijara_page[layout_order]',
+				'sections'     => $pack['sections'],
+				'order'        => $pack['order'],
+				'surface'      => 'home',
+				'lock_hero'    => true,
+			)
+		);
+	}
 }

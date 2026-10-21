@@ -32,9 +32,9 @@ function altijara_get_widget_registry() {
 			'variants' => array(),
 		),
 		'magazine_slider' => array(
-			'label'    => __( 'سلايدر غلاف المجلة', 'altijara' ),
+			'label'    => __( 'سلايدر غلاف / شخصية العدد', 'altijara' ),
 			'template' => 'template-parts/home/section-magazine-slider',
-			'query'    => 'issues',
+			'query'    => 'issues', // respects section source: posts|issues
 			'supports' => array( 'visible', 'label', 'category', 'manual_posts', 'count', 'offset', 'orderby', 'order', 'issue_ids', 'source', 'cache' ),
 			'variants' => array(),
 		),
@@ -89,6 +89,20 @@ function altijara_get_widget_registry() {
 			'supports' => array( 'visible', 'label', 'category', 'tag', 'manual_posts', 'count', 'view_period', 'cache' ),
 			'variants' => array(),
 		),
+		'issues_lead'     => array(
+			'label'    => __( 'غلاف العدد الأحدث', 'altijara' ),
+			'template' => 'template-parts/widgets/section-issues-lead',
+			'query'    => 'issues',
+			'supports' => array( 'visible', 'label', 'count', 'offset', 'issue_ids', 'source', 'cache' ),
+			'variants' => array(),
+		),
+		'issues_carousel' => array(
+			'label'    => __( 'شريط أعداد المجلة', 'altijara' ),
+			'template' => 'template-parts/widgets/section-issues-carousel',
+			'query'    => 'issues',
+			'supports' => array( 'visible', 'label', 'count', 'offset', 'issue_ids', 'source', 'band', 'cache' ),
+			'variants' => array(),
+		),
 	);
 
 	/**
@@ -139,6 +153,8 @@ function altijara_widget_to_layout( $widget ) {
 		'article_grid'    => 'news_grid',
 		'split_sector'    => 'split_sector',
 		'most_read'       => 'most_read',
+		'issues_lead'     => 'issues_lead',
+		'issues_carousel' => 'issues_carousel',
 	);
 	$widget = sanitize_key( $widget );
 	return isset( $map[ $widget ] ) ? $map[ $widget ] : 'news_grid';

@@ -94,15 +94,34 @@ let heroCoverPosts = [];
 
 function syncLeadToCoverPost(post) {
   if (!post) return;
+  const title = post.title || '';
+  const href = post.href || (typeof articleHref === 'function' ? articleHref(post) : (post.link || '#'));
+  const excerpt = trimAtWord(post.fullExcerpt || post.excerpt || '', 560);
   const mainTitle = document.querySelector('.lead-primary-story .lead-title-giant a');
   if (mainTitle) {
-    mainTitle.textContent = post.title;
-    mainTitle.href = articleHref(post);
+    mainTitle.textContent = title;
+    mainTitle.href = href;
   }
   const mainExcerpt = document.querySelector('.lead-primary-story .lead-excerpt-text');
   if (mainExcerpt) {
-    mainExcerpt.textContent = trimAtWord(post.fullExcerpt || post.excerpt || '', 560);
+    mainExcerpt.textContent = excerpt;
   }
+}
+
+/** Seed slider state from SSR slides (category issue-cover-personality). */
+function seedHeroCoverPostsFromDom(root) {
+  if (!root) return;
+  const slides = Array.from(root.querySelectorAll('.hero-cover-slide'));
+  heroCoverPosts = slides.map((slide) => ({
+    id: slide.dataset.postId || '',
+    title: slide.dataset.title || slide.querySelector('.magazine-cover-title a')?.textContent?.trim() || '',
+    excerpt: slide.dataset.excerpt || '',
+    fullExcerpt: slide.dataset.excerpt || '',
+    href: slide.dataset.href || slide.querySelector('.magazine-cover-title a')?.getAttribute('href') || '#',
+    link: slide.dataset.href || '',
+    dateText: slide.dataset.date || slide.querySelector('.magazine-cover-date')?.textContent?.trim() || '',
+    img: slide.querySelector('img')?.getAttribute('src') || ''
+  }));
 }
 
 function fillHeroCoverSlider(posts) {
@@ -530,6 +549,8 @@ function initHeroCoverSlider() {
   if (!root || root.dataset.bound === '1') return;
   root.dataset.bound = '1';
   root.dataset.index = '0';
+  seedHeroCoverPostsFromDom(root);
+  if (heroCoverPosts[0]) syncLeadToCoverPost(heroCoverPosts[0]);
 
   const show = (next) => {
     const slides = Array.from(root.querySelectorAll('.hero-cover-slide'));
@@ -537,6 +558,7 @@ function initHeroCoverSlider() {
     const index = (next + slides.length) % slides.length;
     root.dataset.index = String(index);
     slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
+    if (!heroCoverPosts.length) seedHeroCoverPostsFromDom(root);
     syncLeadToCoverPost(heroCoverPosts[index]);
     const visibleDate = root.querySelector('.hero-cover-meta .magazine-cover-date');
     const slideDate = slides[index].querySelector('.magazine-cover-date');

@@ -22,22 +22,63 @@ if ( 'issues' === $layout && function_exists( 'altijara_render_issues_archive' )
 	return;
 endif;
 
+// Custom JNews-style module layout (saved on category term).
+if ( $term_id && function_exists( 'altijara_category_has_custom_layout' ) && altijara_category_has_custom_layout( $term_id ) ) :
+	$cat_name = ( $term && ! empty( $term->name ) ) ? $term->name : '';
+	$pack     = altijara_get_category_layout( $term_id, true );
+	?>
+<main class="container category-main-wrapper" data-altijara-layout="custom">
+	<header class="category-header-wrap">
+		<div class="category-title-row">
+			<h1 class="category-title-main"><?php echo esc_html( $cat_name ); ?></h1>
+		</div>
+	</header>
+	<?php
+	altijara_with_layout_context(
+		array(
+			'category' => $term_id,
+			'surface'  => 'category',
+		),
+		static function () use ( $pack ) {
+			altijara_render_layout_rows( $pack );
+		}
+	);
+	?>
+</main>
+	<?php
+	get_footer();
+	return;
+endif;
+
+$counts = function_exists( 'altijara_get_archive_counts' )
+	? altijara_get_archive_counts()
+	: array(
+		'sidebar_count'  => 3,
+		'featured_rows'  => 2,
+		'featured_count' => 8,
+		'news_size'      => 10,
+	);
+$sidebar_n  = (int) $counts['sidebar_count'];
+$featured_n = (int) $counts['featured_count'];
+$news_size  = (int) $counts['news_size'];
+
+$full_hero = $term_id && function_exists( 'altijara_category_uses_full_hero' ) && altijara_category_uses_full_hero( $term_id );
+$rec_n     = $full_hero ? 0 : $sidebar_n;
+$spotlight = 1 + $rec_n + $featured_n;
+
 $paged    = max( 1, (int) get_query_var( 'paged' ), (int) get_query_var( 'page' ) );
-$per_page = 20;
+$per_page = $spotlight + $news_size;
 $offset   = ( $paged - 1 ) * $per_page;
 $posts    = $term_id ? altijara_get_category_posts( $term_id, $per_page, $offset ) : array();
-$full_hero = $term_id && function_exists( 'altijara_category_uses_full_hero' ) && altijara_category_uses_full_hero( $term_id );
-$hero      = ! empty( $posts[0] ) ? $posts[0] : null;
-$spotlight = $full_hero ? 9 : 12; // 1 hero (+ optional 3 rec) + 8 featured
-$news_size = 10;
+$hero     = ! empty( $posts[0] ) ? $posts[0] : null;
 if ( $full_hero ) {
 	$sidebar  = array();
-	$featured = array_slice( $posts, 1, 8 );
-	$list     = array_slice( $posts, 9 );
+	$featured = array_slice( $posts, 1, $featured_n );
+	$list     = array_slice( $posts, 1 + $featured_n );
 } else {
-	$sidebar  = array_slice( $posts, 1, 3 );
-	$featured = array_slice( $posts, 4, 8 );
-	$list     = array_slice( $posts, 12 );
+	$sidebar  = array_slice( $posts, 1, $sidebar_n );
+	$featured = array_slice( $posts, 1 + $sidebar_n, $featured_n );
+	$list     = array_slice( $posts, $spotlight );
 }
 $cat_name    = ( $term && ! empty( $term->name ) ) ? $term->name : '';
 $fallback    = altijara_asset( 'assets/images/issue-730-f2dfce.jpg' );
@@ -45,29 +86,38 @@ $total_posts = ( $term_id && function_exists( 'altijara_count_category_posts' ) 
 $news_remain = max( 0, (int) $total_posts - $spotlight );
 $total_pages = $news_remain > 0 ? (int) max( 1, (int) ceil( $news_remain / $news_size ) ) : 1;
 
+$cat_tax = $term_id
+	? array(
+		array(
+			'taxonomy'         => 'category',
+			'field'            => 'term_id',
+			'terms'            => array( $term_id ),
+			'include_children' => true,
+			'operator'         => 'IN',
+		),
+	)
+	: array();
 $most_read = $term_id
 	? altijara_query_posts(
 		array(
-			'cat'            => $term_id,
 			'posts_per_page' => 7,
 			'orderby'        => 'comment_count',
 			'order'          => 'DESC',
+			'tax_query'      => $cat_tax,
 		),
-		'cat_mr_' . $term_id
+		'cat_mr_v2_' . $term_id
 	)
 	: array();
 if ( count( $most_read ) < 4 && $term_id ) {
 	$most_read = altijara_query_posts(
 		array(
-			'cat'            => $term_id,
 			'posts_per_page' => 7,
+			'tax_query'      => $cat_tax,
 		),
-		'cat_mr_recent_' . $term_id
+		'cat_mr_recent_v2_' . $term_id
 	);
 }
 
-$issue_posts = function_exists( 'altijara_get_issue_posts' ) ? altijara_get_issue_posts( 6, 0 ) : array();
-$lead_issue  = ! empty( $issue_posts[0] ) ? $issue_posts[0] : null;
 ?>
 <main class="container category-main-wrapper">
 
@@ -75,7 +125,16 @@ $lead_issue  = ! empty( $issue_posts[0] ) ? $issue_posts[0] : null;
 		<h1 class="screen-reader-text"><?php echo esc_html( $cat_name ); ?></h1>
 	<?php endif; ?>
 
-	<section class="cat-top-grid<?php echo $full_hero ? ' is-hero-full' : ''; ?>" style="margin-top:20px;">
+	<?php
+	$show_rec   = ! $full_hero && ! empty( $sidebar );
+	$top_classes = 'cat-top-grid';
+	if ( $full_hero ) {
+		$top_classes .= ' is-hero-full';
+	} elseif ( ! $show_rec ) {
+		$top_classes .= ' is-hero-solo';
+	}
+	?>
+	<section class="<?php echo esc_attr( $top_classes ); ?>" style="margin-top:20px;">
 		<?php if ( $hero instanceof WP_Post ) : ?>
 			<article class="cat-hero-card" id="catHeroCard">
 				<div class="cat-hero-info">
@@ -103,7 +162,7 @@ $lead_issue  = ! empty( $issue_posts[0] ) ? $issue_posts[0] : null;
 			</article>
 		<?php endif; ?>
 
-		<?php if ( ! $full_hero ) : ?>
+		<?php if ( $show_rec ) : ?>
 			<aside class="cat-recommended-col">
 				<div class="cat-rec-list" id="recList">
 					<?php foreach ( $sidebar as $item ) : ?>
@@ -219,33 +278,17 @@ $lead_issue  = ! empty( $issue_posts[0] ) ? $issue_posts[0] : null;
 		<aside class="cat-opinion-col">
 			<?php altijara_render_sidebar_ad(); ?>
 
-			<div class="cat-new-issue-widget">
-				<div class="cat-new-issue-bar">
-					<h3 class="cat-section-title"><?php esc_html_e( 'من إصدارات المجلة', 'altijara' ); ?></h3>
-					<div class="cat-new-issue-arrows" <?php echo count( $issue_posts ) < 2 ? 'hidden' : ''; ?>>
-						<button type="button" class="cat-new-issue-arrow cat-new-issue-arrow--prev" aria-label="<?php esc_attr_e( 'السابق', 'altijara' ); ?>"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button>
-						<button type="button" class="cat-new-issue-arrow cat-new-issue-arrow--next is-accent" aria-label="<?php esc_attr_e( 'التالي', 'altijara' ); ?>"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>
-					</div>
-				</div>
-				<div class="cat-new-issue-list" id="catNewIssueList">
-					<?php if ( $lead_issue instanceof WP_Post ) : ?>
-						<?php
-						$payload = function_exists( 'altijara_issue_to_js_payload' ) ? altijara_issue_to_js_payload( $lead_issue ) : array();
-						$cover   = ! empty( $payload['cover'] ) ? $payload['cover'] : ( altijara_get_thumb_url( $lead_issue->ID ) ?: $fallback );
-						$href    = ! empty( $payload['flipbook'] ) ? $payload['flipbook'] : get_permalink( $lead_issue );
-						$title   = ! empty( $payload['title'] ) ? $payload['title'] : get_the_title( $lead_issue );
-						?>
-						<a href="<?php echo esc_url( $href ); ?>" class="cat-new-issue-cover" target="_blank" rel="noopener">
-							<span class="sk sk-cover" aria-hidden="true"></span>
-							<img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( $title ); ?>" loading="eager" decoding="async" onload="this.parentElement.classList.add('is-ready')">
-						</a>
-					<?php else : ?>
-						<div class="cat-new-issue-cover" aria-hidden="true">
-							<span class="sk sk-cover"></span>
-						</div>
-					<?php endif; ?>
-				</div>
-			</div>
+			<?php
+			get_template_part(
+				'template-parts/widgets/magazine-issues',
+				'slider',
+				array(
+					'items' => function_exists( 'altijara_get_magazine_slider_items' )
+						? altijara_get_magazine_slider_items( 8 )
+						: array(),
+				)
+			);
+			?>
 
 			<div class="cat-most-read-widget">
 				<div class="cat-section-bar cat-mr-bar">

@@ -18,6 +18,7 @@ define( 'ALTIJARA_PAGE_META_KEY', '_altijara_page_meta' );
  */
 function altijara_page_template_map() {
 	return array(
+		'home-2.php'         => 'home',
 		'page-about.php'     => 'about',
 		'page-contact.php'   => 'contact',
 		'page-advertise.php' => 'advertise',
@@ -49,6 +50,7 @@ function altijara_get_page_schema_key( $post_id = 0 ) {
  */
 function altijara_page_schema_labels() {
 	return array(
+		'home'      => __( 'Home 2', 'altijara' ),
 		'about'     => __( 'About', 'altijara' ),
 		'contact'   => __( 'Contact', 'altijara' ),
 		'advertise' => __( 'Advertise', 'altijara' ),

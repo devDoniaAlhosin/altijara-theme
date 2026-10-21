@@ -7,35 +7,51 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-$issue = isset( $args['issue'] ) ? $args['issue'] : null;
+$issue    = isset( $args['issue'] ) ? $args['issue'] : null;
 $fallback = altijara_asset( 'assets/images/issue-730-f2dfce.jpg' );
 ?>
-<section class="issues-lead-hero" style="margin-top: 24px;">
+<section class="issues-lead-hero">
 	<div class="issues-lead-grid">
 		<?php if ( $issue instanceof WP_Post ) : ?>
 			<?php
 			$pid      = (int) $issue->ID;
-			$cover    = altijara_get_thumb_url( $pid ) ?: $fallback;
 			$number   = altijara_get_issue_meta( $pid, 'number' );
+			$cover    = function_exists( 'altijara_resolve_issue_cover_url' )
+				? altijara_resolve_issue_cover_url( $pid, $number ? (int) $number : 0 )
+				: '';
+			if ( ! $cover ) {
+				$cover = altijara_get_thumb_url( $pid ) ?: $fallback;
+			}
 			$flipbook = altijara_get_issue_meta( $pid, 'flipbook' );
 			$pdf      = altijara_get_issue_meta( $pid, 'pdf' );
 			$pages    = altijara_get_issue_meta( $pid, 'pages' );
 			$files    = altijara_get_issue_meta( $pid, 'files' );
 			$talks    = altijara_get_issue_meta( $pid, 'talks' );
+			$tag      = altijara_get_issue_meta( $pid, 'tag' );
 			$read_url = $flipbook ? $flipbook : get_permalink( $issue );
 			$tag_line = $number
 				? sprintf( /* translators: %s issue number */ __( 'العدد %s — الأحدث', 'altijara' ), $number )
 				: __( 'الأحدث', 'altijara' );
+			$date_txt = function_exists( 'altijara_format_date_ar' ) ? altijara_format_date_ar( $pid ) : get_the_date( '', $issue );
 			?>
 			<div class="lead-media-wrap">
 				<div class="lead-cover-frame">
 					<img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $issue ) ); ?>" class="lead-cover-img" onerror="this.src='<?php echo esc_url( $fallback ); ?>'">
 					<span class="lead-issue-tag"><?php echo esc_html( $tag_line ); ?></span>
+					<span class="lead-play-badge" aria-hidden="true">
+						<span class="play-icon-svg">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+						</span>
+						<span class="lead-media-pill"><?php esc_html_e( 'نسخة رقمية', 'altijara' ); ?></span>
+					</span>
 				</div>
 			</div>
 			<div class="lead-info-wrap">
 				<div class="lead-meta-row">
-					<span class="lead-type-badge"><?php esc_html_e( 'مجلة غرفة جدة', 'altijara' ); ?></span>
+					<span class="lead-type-badge"><?php echo esc_html( $tag ? $tag : __( 'مجلة غرفة جدة', 'altijara' ) ); ?></span>
+					<?php if ( $date_txt ) : ?>
+						<span class="lead-date-txt"><?php echo esc_html( $date_txt ); ?></span>
+					<?php endif; ?>
 				</div>
 				<h2 class="lead-headline">
 					<a href="<?php echo esc_url( get_permalink( $issue ) ); ?>"><?php echo esc_html( get_the_title( $issue ) ); ?></a>
@@ -72,7 +88,7 @@ $fallback = altijara_asset( 'assets/images/issue-730-f2dfce.jpg' );
 		<?php else : ?>
 			<div class="lead-info-wrap">
 				<h2 class="lead-headline"><?php esc_html_e( 'أعداد مجلة التجارة', 'altijara' ); ?></h2>
-				<p class="lead-synopsis"><?php esc_html_e( 'لم يتم نشر أعداد بعد. أضف أعداداً من لوحة التحكم (أعداد المجلة).', 'altijara' ); ?></p>
+				<p class="lead-synopsis"><?php esc_html_e( 'لم يتم نشر أعداد بعد. أعد تشغيل إعداد القالب أو أضف أعداداً من لوحة التحكم (أعداد المجلة).', 'altijara' ); ?></p>
 			</div>
 		<?php endif; ?>
 	</div>

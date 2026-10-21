@@ -104,7 +104,7 @@ function altijara_register_issue_cpt() {
 			'has_archive'  => 'issues',
 			'rewrite'      => array( 'slug' => 'issue' ),
 			'menu_icon'    => 'dashicons-book-alt',
-			'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt' ),
+			'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
 			'show_in_rest' => true,
 		)
 	);

@@ -140,8 +140,36 @@
     $(this).closest('.altijara-pm-media-field').find('.altijara-pm-media-url').val('');
   });
 
+  function syncHomeSectionCard(card) {
+    if (!card) return;
+    var modeSelect = card.querySelector('.altijara-home-source-mode');
+    var mode = modeSelect ? modeSelect.value : 'category';
+    card.querySelectorAll('.altijara-home-source-panel').forEach(function (panel) {
+      var when = panel.getAttribute('data-show-when');
+      panel.hidden = when !== mode;
+    });
+    var orderby = card.querySelector('.altijara-home-orderby');
+    var orderWrap = card.querySelector('.altijara-home-order-wrap');
+    if (orderWrap && orderby) {
+      orderWrap.hidden = orderby.value === 'rand' || mode !== 'category';
+    }
+  }
+
+  function initHomeSectionCards() {
+    document.querySelectorAll('.altijara-home-section-card').forEach(syncHomeSectionCard);
+  }
+
+  document.addEventListener('change', function (e) {
+    var mode = e.target.closest('.altijara-home-source-mode');
+    var orderby = e.target.closest('.altijara-home-orderby');
+    if (mode || orderby) {
+      syncHomeSectionCard(e.target.closest('.altijara-home-section-card'));
+    }
+  });
+
   function bootNotice() {
     insertEditorNotice();
+    initHomeSectionCards();
   }
 
   if (document.readyState === 'loading') {

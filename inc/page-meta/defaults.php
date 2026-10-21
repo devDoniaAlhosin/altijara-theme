@@ -12,11 +12,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Default field trees matching current hardcoded template copy.
  *
- * @param string $schema about|contact|advertise|subscribe|login.
+ * @param string $schema home|about|contact|advertise|subscribe|login.
  * @return array<string, mixed>
  */
 function altijara_page_meta_defaults( $schema ) {
 	$defaults = array(
+		'home'      => array(
+			'layout'   => function_exists( 'altijara_layout_preset_home' )
+				? altijara_layout_preset_home()
+				: array( 'sections' => array(), 'order' => array() ),
+			'sections' => function_exists( 'altijara_home_meta_default_sections' )
+				? altijara_home_meta_default_sections()
+				: array(),
+		),
 		'about'     => array(
 			'lead'              => 'تصدر عن غرفة جدة منذ عام 1948م، وتُعد إحدى أبرز المنصات الإعلامية في المملكة لقطاع المال والأعمال.',
 			'highlight_kicker'  => 'غرفة جدة',

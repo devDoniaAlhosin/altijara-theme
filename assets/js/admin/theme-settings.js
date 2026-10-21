@@ -109,4 +109,35 @@
   $(document).on('change input', '.altijara-color-text', function () {
     syncColorUI(this.id, this.value);
   });
+
+  function reindexShareExtra() {
+    $('.altijara-share-extra-rows .altijara-share-extra-row').each(function (i) {
+      $(this).find('[name]').each(function () {
+        var name = $(this).attr('name');
+        if (!name) return;
+        $(this).attr('name', name.replace(/share_extra\[\d+\]/, 'share_extra[' + i + ']'));
+      });
+    });
+  }
+
+  $(document).on('click', '.altijara-share-extra-add', function (e) {
+    e.preventDefault();
+    var tpl = document.getElementById('altijara-share-extra-tpl');
+    var $tbody = $('.altijara-share-extra-rows');
+    if (!tpl || !$tbody.length) return;
+    var html = tpl.innerHTML.replace(/__i__/g, String($tbody.children().length));
+    $tbody.append(html);
+    reindexShareExtra();
+  });
+
+  $(document).on('click', '.altijara-share-extra-remove', function (e) {
+    e.preventDefault();
+    var $tbody = $(this).closest('.altijara-share-extra-rows');
+    $(this).closest('.altijara-share-extra-row').remove();
+    if ($tbody.length && !$tbody.children().length) {
+      $('.altijara-share-extra-add').trigger('click');
+      $tbody.find('input[type="checkbox"]').prop('checked', false);
+    }
+    reindexShareExtra();
+  });
 })(jQuery);

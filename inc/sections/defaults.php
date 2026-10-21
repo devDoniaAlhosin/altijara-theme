@@ -63,10 +63,10 @@ function altijara_default_sections() {
 			'zone'     => 'hero',
 			'widget'   => 'magazine_slider',
 			'layout'   => 'magazine_slider',
-			'label'    => 'غلاف المجلة',
+			'label'    => 'شخصية العدد',
 			'category' => 'personality',
-			'count'    => 4,
-			'source'   => 'issues',
+			'count'    => 6,
+			'source'   => 'posts',
 		) ),
 		'hero_interviews'  => array_merge( $base, array(
 			'zone'     => 'hero',
@@ -80,7 +80,7 @@ function altijara_default_sections() {
 			'zone'     => 'hero',
 			'widget'   => 'hero_featured',
 			'layout'   => 'personality_card',
-			'label'    => 'شخصية الغلاف',
+			'label'    => 'شخصية العدد',
 			'category' => 'personality',
 			'count'    => 1,
 		) ),
@@ -171,10 +171,21 @@ function altijara_default_sections() {
 /**
  * Default body order (pairs kept adjacent).
  *
+ * Flow: متابعات → مال/طاقة → سيارات → تقنية (+ الأكثر قراءة) → صحة | سياحة وترفيه (last row).
+ *
  * @return string[]
  */
 function altijara_default_body_order() {
-	return array( 'followups', 'business', 'energy', 'automotive', 'most_read', 'tech', 'health', 'tourism' );
+	return array(
+		'followups',
+		'business',
+		'energy',
+		'automotive', // سيارات
+		'tech',       // تقنية (cars_row) — after سيارات
+		'most_read',  // paired beside تقنية
+		'health',     // صحة — last split row
+		'tourism',    // سياحة وترفيه
+	);
 }
 
 /**

@@ -59,8 +59,13 @@ function altijara_sanitize_section_row( $id, $row, $def = array() ) {
 	$label = isset( $row['label'] ) ? sanitize_text_field( $row['label'] ) : ( $def['label'] ?? $id );
 	$label = altijara_strip_hero_label_prefix( $label );
 
+	$zone = isset( $row['zone'] ) ? sanitize_key( $row['zone'] ) : ( $def['zone'] ?? '' );
+	if ( 'hero' !== $zone && 'body' !== $zone ) {
+		$zone = $hero ? 'hero' : 'body';
+	}
+
 	return array(
-		'zone'         => $hero ? 'hero' : 'body',
+		'zone'         => $zone,
 		'widget'       => $widget,
 		'layout'       => altijara_widget_to_layout( $widget ),
 		'label'        => $label,
@@ -68,8 +73,8 @@ function altijara_sanitize_section_row( $id, $row, $def = array() ) {
 		'category'     => $cat,
 		'tag'          => isset( $row['tag'] ) ? absint( $row['tag'] ) : 0,
 		'manual_posts' => $manual_ids,
-		'count'        => isset( $row['count'] ) ? max( 1, min( 20, (int) $row['count'] ) ) : (int) ( $def['count'] ?? 4 ),
-		'offset'       => isset( $row['offset'] ) ? max( 0, min( 100, (int) $row['offset'] ) ) : 0,
+		'count'        => isset( $row['count'] ) ? max( 1, min( 48, (int) $row['count'] ) ) : (int) ( $def['count'] ?? 4 ),
+		'offset'       => isset( $row['offset'] ) ? max( 0, min( 100, (int) $row['offset'] ) ) : (int) ( $def['offset'] ?? 0 ),
 		'orderby'      => $orderby,
 		'order'        => ( isset( $row['order'] ) && 'ASC' === strtoupper( (string) $row['order'] ) ) ? 'ASC' : 'DESC',
 		'variant'      => $variant,
@@ -77,6 +82,8 @@ function altijara_sanitize_section_row( $id, $row, $def = array() ) {
 		'issue_ids'    => $issue_ids,
 		'view_period'  => $view_period,
 		'pair_with'    => isset( $row['pair_with'] ) ? sanitize_key( $row['pair_with'] ) : ( $def['pair_with'] ?? '' ),
+		'band_min'     => isset( $row['band_min'] ) ? max( 0, (int) $row['band_min'] ) : (int) ( $def['band_min'] ?? 0 ),
+		'band_max'     => isset( $row['band_max'] ) ? max( 0, (int) $row['band_max'] ) : (int) ( $def['band_max'] ?? 0 ),
 	);
 }
 

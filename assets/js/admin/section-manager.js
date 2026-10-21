@@ -1,5 +1,5 @@
 /**
- * Altijara Section Manager — AJAX picker + homepage builder (Cards/Blocks).
+ * Altijara Section Manager — AJAX picker + multi-context layout builder.
  */
 (function () {
   'use strict';
@@ -100,7 +100,8 @@
     if (!picker) return;
     clearTimeout(timer);
     const q = input.value.trim();
-    if (q.length < 2) {
+    const isId = /^\d+$/.test(q);
+    if ((!isId && q.length < 2) || (isId && q.length < 1)) {
       const results = picker.querySelector('.altijara-picker-results');
       if (results) results.hidden = true;
       return;
@@ -125,41 +126,89 @@
     }
   });
 
-  /* ——— Homepage builder ——— */
+  /* ——— Layout builder (multi-instance) ——— */
 
   function uniqueId(prefix) {
     return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
-  function openModal() {
-    const modal = document.getElementById('altijara-builder-modal');
+  function getBuilder(el) {
+    return el ? el.closest('.altijara-layout-builder') : null;
+  }
+
+  function openModal(builder) {
+    if (!builder) return;
+    const mid = builder.getAttribute('data-modal-id');
+    const modal = mid ? document.getElementById(mid) : null;
     if (modal) modal.hidden = false;
   }
 
-  function closeModal() {
-    const modal = document.getElementById('altijara-builder-modal');
+  function closeModal(builderOrModal) {
+    let modal = null;
+    if (builderOrModal && builderOrModal.classList && builderOrModal.classList.contains('altijara-builder-modal')) {
+      modal = builderOrModal;
+    } else if (builderOrModal) {
+      const mid = builderOrModal.getAttribute('data-modal-id');
+      modal = mid ? document.getElementById(mid) : null;
+    }
     if (modal) modal.hidden = true;
   }
 
-  function setTab(name) {
-    document.querySelectorAll('.altijara-builder-tab').forEach((t) => {
+  function setTab(modal, name) {
+    if (!modal) return;
+    modal.querySelectorAll('.altijara-builder-tab').forEach((t) => {
       t.classList.toggle('is-active', t.getAttribute('data-tab') === name);
     });
-    document.querySelectorAll('.altijara-builder-panel').forEach((p) => {
+    modal.querySelectorAll('.altijara-builder-panel').forEach((p) => {
       const on = p.getAttribute('data-panel') === name;
       p.hidden = !on;
       p.classList.toggle('is-active', on);
     });
   }
 
-  function buildCardFromTemplate(id, label, widget, variant, pairWith) {
-    const tpl = document.getElementById('altijara-section-card-template');
-    const list = document.getElementById('altijara-body-sections');
+  function shapeKey(widget, variant, paired) {
+    widget = widget || 'article_grid';
+    variant = variant || 'default';
+    if (widget === 'article_grid' && variant === 'cars_row') return 'card-row';
+    if (widget === 'split_sector' && paired) return 'split-pair';
+    const map = {
+      article_grid: 'grid-4',
+      split_sector: 'sector',
+      article_list: 'list',
+      lead_stack: 'lead-stack',
+      most_read: 'ranked',
+      chamber_column: 'chamber',
+      hero_featured: 'hero-text',
+      magazine_slider: 'cover',
+      issues_lead: 'issue-lead',
+      issues_carousel: 'carousel',
+    };
+    return map[widget] || 'block';
+  }
+
+  function applyShape(card, shape) {
+    if (!card || !shape) return;
+    card.setAttribute('data-shape', shape);
+    const el = card.querySelector('.altijara-el-shape');
+    if (!el) return;
+    el.className = 'altijara-el-shape altijara-el-shape--sm altijara-el-shape--' + shape;
+    while (el.children.length < 6) {
+      const i = document.createElement('i');
+      i.className = 'altijara-el-shape__c altijara-el-shape__c--' + (el.children.length + 1);
+      el.appendChild(i);
+    }
+  }
+
+  function buildCardFromTemplate(builder, id, label, widget, variant, pairWith, shape) {
+    if (!builder) return null;
+    const tplId = builder.getAttribute('data-tpl-id');
+    const listId = builder.getAttribute('data-list-id');
+    const fieldPrefix = builder.getAttribute('data-field-prefix') || 'altijara_sections';
+    const tpl = tplId ? document.getElementById(tplId) : null;
+    const list = listId ? document.getElementById(listId) : null;
     if (!tpl || !list) return null;
 
-    let html = tpl.innerHTML
-      .replace(/__ID__/g, id)
-      .replace(/__LABEL__/g, label || id);
+    let html = tpl.innerHTML.replace(/__ID__/g, id).replace(/__LABEL__/g, label || id);
 
     const wrap = document.createElement('div');
     wrap.innerHTML = html.trim();
@@ -170,6 +219,7 @@
     card.setAttribute('data-widget', widget);
     card.setAttribute('data-zone', 'body');
     card.open = true;
+    applyShape(card, shape || shapeKey(widget, variant, !!pairWith));
 
     const widgetInput = card.querySelector('input[name*="[widget]"]');
     if (widgetInput) widgetInput.value = widget;
@@ -177,11 +227,10 @@
     const variantSelect = card.querySelector('select[name*="[variant]"]');
     if (variantSelect && variant) variantSelect.value = variant;
 
-    // If no variant select but we need cars_row, inject hidden.
     if (!variantSelect && variant && variant !== 'default') {
       const hidden = document.createElement('input');
       hidden.type = 'hidden';
-      hidden.name = 'altijara_sections[' + id + '][variant]';
+      hidden.name = fieldPrefix + '[' + id + '][variant]';
       hidden.value = variant;
       card.querySelector('.altijara-section-body')?.appendChild(hidden);
     }
@@ -198,7 +247,6 @@
     const orderItem = card.querySelector('.altijara-body-order-item');
     if (orderItem) orderItem.value = id;
 
-    // Ensure visible checkbox checked for new items.
     const vis = card.querySelector('input[name*="[visible]"]');
     if (vis) vis.checked = true;
 
@@ -206,38 +254,40 @@
     return card;
   }
 
-  function addElement(btn) {
+  function addElement(builder, btn) {
     const widget = btn.getAttribute('data-widget') || 'article_grid';
     const variant = btn.getAttribute('data-variant') || 'default';
     const label = btn.getAttribute('data-label') || widget;
     const paired = btn.getAttribute('data-paired') === '1';
 
+    const shape = btn.getAttribute('data-shape') || shapeKey(widget, variant, paired);
+
     if (paired && widget === 'split_sector') {
       const idA = uniqueId('sec_split');
       const idB = uniqueId('sec_split');
-      const cardA = buildCardFromTemplate(idA, label + ' A', widget, 'default', idB);
-      const cardB = buildCardFromTemplate(idB, label + ' B', widget, 'default', idA);
+      const cardA = buildCardFromTemplate(builder, idA, label + ' A', widget, 'default', idB, 'sector');
+      const cardB = buildCardFromTemplate(builder, idB, label + ' B', widget, 'default', idA, 'sector');
       if (cardA && cardB) {
-        closeModal();
+        closeModal(builder);
         cardA.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
       return;
     }
 
     const id = uniqueId('sec_' + widget.replace(/_/g, ''));
-    const card = buildCardFromTemplate(id, label, widget, variant, '');
+    const card = buildCardFromTemplate(builder, id, label, widget, variant, '', shape);
     if (card) {
-      closeModal();
+      closeModal(builder);
       card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
 
-  /* Drag reorder (HTML5) */
   let dragEl = null;
+  let dragList = null;
 
-  function bindSortable() {
-    const list = document.getElementById('altijara-body-sections');
-    if (!list) return;
+  function bindSortable(list) {
+    if (!list || list.dataset.sortBound) return;
+    list.dataset.sortBound = '1';
 
     list.addEventListener('dragstart', (e) => {
       const card = e.target.closest('.altijara-section-card');
@@ -246,6 +296,7 @@
         return;
       }
       dragEl = card;
+      dragList = list;
       card.classList.add('is-dragging');
       e.dataTransfer.effectAllowed = 'move';
       try {
@@ -256,11 +307,13 @@
     list.addEventListener('dragend', () => {
       if (dragEl) dragEl.classList.remove('is-dragging');
       dragEl = null;
+      dragList = null;
       list.querySelectorAll('.altijara-section-card').forEach((c) => c.classList.remove('drag-over'));
     });
 
     list.addEventListener('dragover', (e) => {
       e.preventDefault();
+      if (!dragEl || dragList !== list) return;
       const over = e.target.closest('.altijara-section-card');
       if (!over || over === dragEl) return;
       list.querySelectorAll('.altijara-section-card').forEach((c) => c.classList.remove('drag-over'));
@@ -270,55 +323,60 @@
       if (before) list.insertBefore(dragEl, over);
       else list.insertBefore(dragEl, over.nextSibling);
     });
-
-    list.querySelectorAll('.altijara-section-card').forEach((card) => {
-      const handle = card.querySelector('.altijara-section-drag');
-      if (handle) {
-        card.setAttribute('draggable', 'true');
-      }
-    });
   }
 
-  // Re-bind draggable when new cards added.
-  const sortObserver = new MutationObserver(() => {
-    const list = document.getElementById('altijara-body-sections');
+  function refreshDraggable(list) {
     if (!list) return;
     list.querySelectorAll('.altijara-section-card').forEach((card) => {
       if (card.querySelector('.altijara-section-drag')) {
         card.setAttribute('draggable', 'true');
       }
     });
-  });
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
-    bindSortable();
-    const list = document.getElementById('altijara-body-sections');
-    if (list) sortObserver.observe(list, { childList: true });
+    document.querySelectorAll('.altijara-body-sortable').forEach((list) => {
+      bindSortable(list);
+      refreshDraggable(list);
+      new MutationObserver(() => refreshDraggable(list)).observe(list, { childList: true });
+    });
   });
 
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.altijara-builder-add-open')) {
+    const addBtn = e.target.closest('.altijara-builder-add-open');
+    if (addBtn) {
       e.preventDefault();
-      openModal();
+      openModal(getBuilder(addBtn));
       return;
     }
-    if (e.target.closest('[data-close]')) {
+
+    const closeBtn = e.target.closest('[data-close]');
+    if (closeBtn) {
       e.preventDefault();
-      closeModal();
+      const modal = closeBtn.closest('.altijara-builder-modal');
+      closeModal(modal);
       return;
     }
+
     const tab = e.target.closest('.altijara-builder-tab');
     if (tab) {
       e.preventDefault();
-      setTab(tab.getAttribute('data-tab'));
+      setTab(tab.closest('.altijara-builder-modal'), tab.getAttribute('data-tab'));
       return;
     }
+
     const elBtn = e.target.closest('.altijara-builder-element');
     if (elBtn) {
       e.preventDefault();
-      addElement(elBtn);
+      const modal = elBtn.closest('.altijara-builder-modal');
+      const mid = modal ? modal.id : '';
+      const builder = mid
+        ? document.querySelector('.altijara-layout-builder[data-modal-id="' + mid + '"]')
+        : null;
+      addElement(builder, elBtn);
       return;
     }
+
     const del = e.target.closest('.altijara-section-delete');
     if (del) {
       e.preventDefault();

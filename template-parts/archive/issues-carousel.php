@@ -15,10 +15,12 @@ $fallback = altijara_asset( 'assets/images/issue-730-f2dfce.jpg' );
 if ( empty( $items ) ) {
 	return;
 }
+
+$tag_colors = array( 'red', 'blue', 'green', 'gold', 'purple', 'orange', 'teal', 'indigo' );
 ?>
 <section class="issues-carousel-section" <?php echo $sec_id ? 'id="' . esc_attr( $sec_id ) . '"' : ''; ?>>
 	<div class="section-title-bar">
-		<div class="section-title-group" style="display: flex; align-items: center; gap: 14px;">
+		<div class="section-title-group">
 			<h2 class="section-ft-heading"><?php echo esc_html( $title ); ?></h2>
 		</div>
 		<div class="carousel-nav-arrows">
@@ -37,28 +39,46 @@ if ( empty( $items ) ) {
 				continue;
 			}
 			$pid      = (int) $issue->ID;
-			$cover    = altijara_get_thumb_url( $pid ) ?: $fallback;
 			$number   = altijara_get_issue_meta( $pid, 'number' );
+			$cover    = function_exists( 'altijara_resolve_issue_cover_url' )
+				? altijara_resolve_issue_cover_url( $pid, $number ? (int) $number : 0 )
+				: '';
+			if ( ! $cover ) {
+				$cover = altijara_get_thumb_url( $pid ) ?: $fallback;
+			}
 			$flipbook = altijara_get_issue_meta( $pid, 'flipbook' );
-			$pdf      = altijara_get_issue_meta( $pid, 'pdf' );
+			$tag      = altijara_get_issue_meta( $pid, 'tag' );
 			$href     = $flipbook ? $flipbook : get_permalink( $issue );
 			$badge    = $number ? sprintf( /* translators: %s number */ __( 'العدد %s', 'altijara' ), $number ) : get_the_title( $issue );
+			$subtitle = $tag ? $tag : ( $number ? sprintf( /* translators: %s number */ __( 'العدد %s', 'altijara' ), $number ) : __( 'مجلة التجارة', 'altijara' ) );
+			$color    = $tag_colors[ $pid % count( $tag_colors ) ];
+			$excerpt  = has_excerpt( $issue ) || get_the_excerpt( $issue ) ? get_the_excerpt( $issue ) : '';
 			?>
-			<article class="issue-card" data-issue-id="<?php echo esc_attr( (string) $pid ); ?>" data-issue-number="<?php echo esc_attr( (string) $number ); ?>">
-				<div class="card-cover-wrap" data-open-issue="<?php echo esc_attr( (string) $pid ); ?>">
-					<img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $issue ) ); ?>" loading="lazy" onerror="this.src='<?php echo esc_url( $fallback ); ?>'">
-					<span class="issue-card-badge"><?php echo esc_html( $badge ); ?></span>
-				</div>
-				<div class="card-body">
-					<h3 class="issue-card-title">
-						<a href="<?php echo esc_url( get_permalink( $issue ) ); ?>"><?php echo esc_html( get_the_title( $issue ) ); ?></a>
+			<article
+				class="issue-card-ft"
+				data-issue-id="<?php echo esc_attr( (string) $pid ); ?>"
+				data-issue-number="<?php echo esc_attr( (string) $number ); ?>"
+			>
+				<a class="card-cover-wrap" href="<?php echo esc_url( $href ); ?>" target="_blank" rel="noopener">
+					<img class="card-cover-img" src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $issue ) ); ?>" loading="lazy" onerror="this.src='<?php echo esc_url( $fallback ); ?>'">
+					<span class="card-num-badge"><?php echo esc_html( $badge ); ?></span>
+					<span class="cover-play-badge" aria-hidden="true">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+					</span>
+				</a>
+				<div class="card-content-wrap">
+					<span class="card-category-tag <?php echo esc_attr( $color ); ?>"><?php echo esc_html( $subtitle ); ?></span>
+					<h3 class="card-issue-title">
+						<a href="<?php echo esc_url( $href ); ?>" target="_blank" rel="noopener"><?php echo esc_html( get_the_title( $issue ) ); ?></a>
 					</h3>
-					<span class="issue-card-date"><?php echo esc_html( altijara_format_date_ar( $pid ) ); ?></span>
-					<div class="issue-card-actions">
-						<a class="issue-card-link" href="<?php echo esc_url( $href ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'تصفح', 'altijara' ); ?></a>
-						<?php if ( $pdf ) : ?>
-							<a class="issue-card-link js-pdf-download" href="<?php echo esc_url( $pdf ); ?>" download><?php esc_html_e( 'PDF', 'altijara' ); ?></a>
-						<?php endif; ?>
+					<?php if ( $excerpt ) : ?>
+						<p class="card-issue-excerpt"><?php echo esc_html( $excerpt ); ?></p>
+					<?php endif; ?>
+					<div class="card-footer-meta">
+						<a href="<?php echo esc_url( $href ); ?>" class="btn-card-read-action" target="_blank" rel="noopener">
+							<span><?php esc_html_e( 'اقرأ العدد', 'altijara' ); ?></span>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+						</a>
 					</div>
 				</div>
 			</article>

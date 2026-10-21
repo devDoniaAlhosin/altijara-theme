@@ -18,8 +18,20 @@ $altijara_includes = array(
 	// Content helpers.
 	'/inc/content/queries.php',
 	'/inc/content/social.php',
+	'/inc/content/auth-oauth.php',
 	'/inc/content/nav.php',
 	'/inc/content/archive-layouts.php',
+	'/inc/content/issue-meta.php',
+	'/inc/content/issue-ingest.php',
+	// Shared layout builder (Home / Category / Issues).
+	'/inc/layouts/context.php',
+	'/inc/layouts/sanitize.php',
+	'/inc/layouts/presets.php',
+	'/inc/layouts/render.php',
+	'/inc/layouts/admin.php',
+	'/inc/layouts/home.php',
+	'/inc/layouts/category.php',
+	'/inc/layouts/issues.php',
 	// Widget engine.
 	'/inc/widgets/registry.php',
 	'/inc/widgets/query-engine.php',
@@ -36,6 +48,7 @@ $altijara_includes = array(
 	// Page meta CMS.
 	'/inc/page-meta/schema.php',
 	'/inc/page-meta/defaults.php',
+	'/inc/page-meta/home.php',
 	'/inc/page-meta/repository.php',
 	'/inc/page-meta/sanitize.php',
 	'/inc/page-meta/save.php',

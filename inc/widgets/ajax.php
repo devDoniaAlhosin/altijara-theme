@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Search published posts (and optionally issues) by title.
  */
 function altijara_ajax_search_posts() {
-	if ( ! current_user_can( 'manage_options' ) ) {
+	if ( ! current_user_can( 'edit_posts' ) ) {
 		wp_send_json_error( array( 'message' => 'forbidden' ), 403 );
 	}
 	check_ajax_referer( 'altijara_admin_search', 'nonce' );
@@ -25,6 +25,33 @@ function altijara_ajax_search_posts() {
 	}
 
 	$types = ( 'any' === $post_type ) ? array( 'post', 'issue' ) : array( $post_type );
+	$items = array();
+	$seen  = array();
+
+	$push = static function ( $post ) use ( &$items, &$seen ) {
+		if ( ! $post instanceof WP_Post || isset( $seen[ (int) $post->ID ] ) ) {
+			return;
+		}
+		$seen[ (int) $post->ID ] = true;
+		$items[] = array(
+			'id'    => (int) $post->ID,
+			'title' => html_entity_decode( get_the_title( $post ), ENT_QUOTES, get_bloginfo( 'charset' ) ) . ' (#' . (int) $post->ID . ')',
+			'type'  => $post->post_type,
+			'date'  => get_the_date( 'Y-m-d', $post ),
+		);
+	};
+
+	// Exact ID lookup — type a number to pick by ID.
+	if ( '' !== $q && ctype_digit( $q ) ) {
+		$by_id = get_post( (int) $q );
+		if ( $by_id && 'publish' === $by_id->post_status && in_array( $by_id->post_type, $types, true ) ) {
+			$push( $by_id );
+		}
+	}
+
+	if ( strlen( $q ) < 2 && ! ctype_digit( $q ) ) {
+		wp_send_json_success( array( 'items' => $items ) );
+	}
 
 	$args = array(
 		'post_type'      => $types,
@@ -34,20 +61,13 @@ function altijara_ajax_search_posts() {
 		'order'          => 'DESC',
 		'no_found_rows'  => true,
 	);
-
 	if ( strlen( $q ) >= 2 ) {
 		$args['s'] = $q;
 	}
 
 	$query = new WP_Query( $args );
-	$items = array();
 	foreach ( $query->posts as $post ) {
-		$items[] = array(
-			'id'    => (int) $post->ID,
-			'title' => html_entity_decode( get_the_title( $post ), ENT_QUOTES, get_bloginfo( 'charset' ) ),
-			'type'  => $post->post_type,
-			'date'  => get_the_date( 'Y-m-d', $post ),
-		);
+		$push( $post );
 	}
 	wp_reset_postdata();
 

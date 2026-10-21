@@ -130,19 +130,13 @@ function altijara_enqueue_assets() {
 			? altijara_resolve_category_key( $term_id )
 			: '';
 
-		// Prefer live issue CPT covers when available (overrides static fallback in issues-recent.js).
-		if ( function_exists( 'altijara_get_issue_posts' ) && function_exists( 'altijara_issue_to_js_payload' ) ) {
-			$live_issues = array();
-			foreach ( altijara_get_issue_posts( 8, 0 ) as $issue_post ) {
-				$row = altijara_issue_to_js_payload( $issue_post );
-				if ( ! empty( $row['cover'] ) || ! empty( $row['flipbook'] ) ) {
-					$live_issues[] = $row;
-				}
-			}
+		// Magazine sidebar slider — featured covers (absolute staging URLs).
+		if ( function_exists( 'altijara_get_magazine_slider_items' ) ) {
+			$live_issues = altijara_get_magazine_slider_items( 8 );
 			if ( $live_issues ) {
 				wp_add_inline_script(
 					'altijara-issues-recent',
-					'window.AltijaraRecentIssues=' . wp_json_encode( $live_issues ) . ';',
+					'window.AltijaraRecentIssues=' . wp_json_encode( array_values( $live_issues ) ) . ';',
 					'after'
 				);
 			}
@@ -159,9 +153,18 @@ function altijara_enqueue_assets() {
 			)
 		);
 		$full_hero   = ( $term_id && function_exists( 'altijara_category_uses_full_hero' ) && altijara_category_uses_full_hero( $term_id ) );
+		$counts      = function_exists( 'altijara_get_archive_counts' )
+			? altijara_get_archive_counts()
+			: array(
+				'sidebar_count'  => 3,
+				'featured_count' => 8,
+				'news_size'      => 10,
+			);
+		$sidebar_n   = $full_hero ? 0 : (int) $counts['sidebar_count'];
+		$featured_n  = (int) $counts['featured_count'];
+		$news_size   = (int) $counts['news_size'];
+		$spotlight   = 1 + $sidebar_n + $featured_n;
 		$total_posts = ( $term_id && function_exists( 'altijara_count_category_posts' ) ) ? altijara_count_category_posts( $term_id ) : 0;
-		$spotlight   = $full_hero ? 9 : 12;
-		$news_size   = 10;
 		$news_remain = max( 0, $total_posts - $spotlight );
 		$total_pages = $news_remain > 0 ? (int) max( 1, (int) ceil( $news_remain / $news_size ) ) : 1;
 		$paged_now   = max( 1, (int) get_query_var( 'paged' ), (int) get_query_var( 'page' ) );
@@ -170,17 +173,19 @@ function altijara_enqueue_assets() {
 			'altijara-category',
 			'AltijaraCategory',
 			array(
-				'termId'     => $term_id,
-				'key'        => $cat_key,
-				'slug'       => ( $term_obj && ! empty( $term_obj->slug ) ) ? (string) $term_obj->slug : '',
-				'name'       => ( $term_obj && ! empty( $term_obj->name ) ) ? (string) $term_obj->name : '',
-				'ssr'        => true,
-				'fullHero'   => $full_hero,
-				'total'      => $total_posts,
-				'totalPages' => $total_pages,
-				'page'       => $paged_now,
-				'newsSize'   => $news_size,
-				'spotlight'  => $spotlight,
+				'termId'        => $term_id,
+				'key'           => $cat_key,
+				'slug'          => ( $term_obj && ! empty( $term_obj->slug ) ) ? (string) $term_obj->slug : '',
+				'name'          => ( $term_obj && ! empty( $term_obj->name ) ) ? (string) $term_obj->name : '',
+				'ssr'           => true,
+				'fullHero'      => $full_hero,
+				'total'         => $total_posts,
+				'totalPages'    => $total_pages,
+				'page'          => $paged_now,
+				'newsSize'      => $news_size,
+				'spotlight'     => $spotlight,
+				'sidebarCount'  => $sidebar_n,
+				'featuredCount' => $featured_n,
 			)
 		);
 	}
@@ -196,6 +201,16 @@ function altijara_enqueue_assets() {
 				'strategy'  => 'defer',
 			)
 		);
+		if ( function_exists( 'altijara_get_magazine_slider_items' ) ) {
+			$article_issues = altijara_get_magazine_slider_items( 8 );
+			if ( $article_issues ) {
+				wp_add_inline_script(
+					'altijara-issues-recent',
+					'window.AltijaraRecentIssues=' . wp_json_encode( array_values( $article_issues ) ) . ';',
+					'after'
+				);
+			}
+		}
 		wp_enqueue_script(
 			'altijara-article',
 			altijara_asset( 'assets/js/article/article.js' ),
@@ -206,13 +221,16 @@ function altijara_enqueue_assets() {
 				'strategy'  => 'defer',
 			)
 		);
+		$article_opts = function_exists( 'altijara_get_article_settings' ) ? altijara_get_article_settings() : array();
 		wp_localize_script(
 			'altijara-article',
 			'AltijaraArticle',
 			array(
-				'id'   => get_queried_object_id(),
-				'slug' => get_post_field( 'post_name', get_queried_object_id() ),
-				'ssr'  => true,
+				'id'              => get_queried_object_id(),
+				'slug'            => get_post_field( 'post_name', get_queried_object_id() ),
+				'ssr'             => true,
+				'relatedInitial'  => isset( $article_opts['related_count'] ) ? (int) $article_opts['related_count'] : 2,
+				'relatedPerLoad'  => isset( $article_opts['related_per_load'] ) ? (int) $article_opts['related_per_load'] : 2,
 			)
 		);
 	}

@@ -891,16 +891,13 @@ function initPdfDownloads() {
  */
 function createIssueCardHTML(issue) {
   const readUrl = issue.flipbook || issue.link;
-  const isFlip = Boolean(issue.flipbook);
-  const readLabel = isFlip ? "تصفح تفاعلي ←" : "تصفح العدد ←";
-  const badgeText = isFlip ? "نسخة رقمية تفاعلية" : "أرشيف معتمد";
 
   return `
     <article class="issue-card-ft" data-issue-num="${issue.number}">
-      <div class="card-cover-wrap" onclick="openIssueModal(${issue.number})">
+      <a class="card-cover-wrap" href="${readUrl}" target="_blank" rel="noopener">
         <span class="card-num-badge">العدد ${issue.number}</span>
         <img src="${issue.cover}" alt="${issue.title}" class="card-cover-img" decoding="async" onerror="this.onerror=null; this.src='assets/images/issue-730-clean.png';">
-      </div>
+      </a>
       <div class="card-content-wrap">
         <h3 class="card-issue-title">
           <a href="${readUrl}" target="_blank" rel="noopener">${issue.title}</a>
@@ -908,7 +905,7 @@ function createIssueCardHTML(issue) {
         <p class="card-issue-excerpt">${issue.excerpt}</p>
         <div class="card-footer-meta">
           <a href="${readUrl}" class="btn-card-read-action" target="_blank" rel="noopener">
-            <span>تصفح العدد</span>
+            <span>اقرأ العدد</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
           </a>
         </div>
@@ -1090,86 +1087,6 @@ function initSearch() {
     }
   });
 }
-
-/**
- * Modal Handling
- */
-function openIssueModal(num) {
-  const issue = ALL_ISSUES.find(i => i.number === num);
-  if (!issue) return;
-
-  const modal = document.getElementById("issueModalBackdrop");
-  const coverImg = document.getElementById("modalCoverImg");
-  const badge = document.getElementById("modalBadge");
-  const tag = document.getElementById("modalTag");
-  const date = document.getElementById("modalDate");
-  const title = document.getElementById("modalTitle");
-  const desc = document.getElementById("modalDesc");
-  const readBtn = document.getElementById("modalReadBtn");
-  const pdfBtn = document.getElementById("modalPdfBtn");
-
-  if (coverImg) {
-    coverImg.src = issue.cover;
-    coverImg.alt = issue.title;
-  }
-  if (badge) badge.textContent = `العدد ${issue.number} (${issue.pages} صفحة)`;
-  if (tag) {
-    tag.textContent = issue.tag;
-    tag.className = `modal-tag ${issue.tagColor}`;
-  }
-  if (date) date.textContent = issue.date;
-  if (title) title.textContent = issue.title;
-  if (desc) desc.textContent = issue.excerpt;
-  if (readBtn) {
-    readBtn.href = issue.flipbook || issue.link;
-  }
-  if (pdfBtn) {
-    const pdfUrl = issue.pdfLink || issue.link;
-    pdfBtn.href = pdfUrl;
-    if (/\.pdf(\?|#|$)/i.test(pdfUrl)) {
-      const fileName = `مجلة-التجارة-العدد-${issue.number}.pdf`;
-      pdfBtn.classList.add("js-pdf-download");
-      pdfBtn.setAttribute("data-pdf-url", pdfUrl);
-      pdfBtn.setAttribute("data-pdf-name", fileName);
-      pdfBtn.setAttribute("download", fileName);
-      pdfBtn.removeAttribute("target");
-    } else {
-      pdfBtn.classList.remove("js-pdf-download");
-      pdfBtn.removeAttribute("data-pdf-url");
-      pdfBtn.removeAttribute("data-pdf-name");
-      pdfBtn.removeAttribute("download");
-      pdfBtn.setAttribute("target", "_blank");
-    }
-  }
-
-  if (modal) {
-    modal.classList.add("active");
-    document.body.style.overflow = "hidden";
-  }
-}
-
-function closeIssueModal() {
-  const modal = document.getElementById("issueModalBackdrop");
-  if (modal) {
-    modal.classList.remove("active");
-    document.body.style.overflow = "";
-  }
-}
-
-// Close modal on backdrop click
-document.addEventListener("click", (e) => {
-  const modal = document.getElementById("issueModalBackdrop");
-  if (modal && e.target === modal) {
-    closeIssueModal();
-  }
-});
-
-// Close modal on ESC key
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    closeIssueModal();
-  }
-});
 
 /**
  * Market Ticker & Live Clock

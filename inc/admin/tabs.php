@@ -16,7 +16,7 @@ function altijara_settings_tabs() {
 	return array(
 		'general'      => array(
 			'label' => __( 'General', 'altijara' ),
-			'hint'  => __( 'Site tagline and category slug map used by homepage sections.', 'altijara' ),
+			'hint'  => __( 'Site tagline. Homepage sections are edited on the Home 2 page metabox.', 'altijara' ),
 			'icon'  => 'dashicons-admin-generic',
 		),
 		'design'       => array(
@@ -36,7 +36,7 @@ function altijara_settings_tabs() {
 		),
 		'homepage'     => array(
 			'label' => __( 'Homepage', 'altijara' ),
-			'hint'  => __( 'Homepage section sources, counts, order, and visibility for the custom magazine layout.', 'altijara' ),
+			'hint'  => __( 'Legacy theme-options builder. Prefer the Home 2 page template metabox when it is set as the front page.', 'altijara' ),
 			'icon'  => 'dashicons-admin-home',
 		),
 		'archives'     => array(
@@ -51,7 +51,7 @@ function altijara_settings_tabs() {
 		),
 		'social'       => array(
 			'label' => __( 'Social', 'altijara' ),
-			'hint'  => __( 'Shared social profile links shown in the header and footer.', 'altijara' ),
+			'hint'  => __( 'Profile links for header/footer, plus Google & Facebook login.', 'altijara' ),
 			'icon'  => 'dashicons-share',
 		),
 		'article'      => array(

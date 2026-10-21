@@ -117,3 +117,262 @@ function altijara_social_platform_choices() {
 		'custom'    => __( 'أخرى', 'altijara' ),
 	);
 }
+
+/**
+ * Built-in share platforms available on single articles (admin choices).
+ *
+ * @return array<string, string>
+ */
+function altijara_article_share_platform_choices() {
+	return array(
+		'whatsapp'  => 'WhatsApp',
+		'telegram'  => 'Telegram',
+		'x'         => 'X / Twitter',
+		'linkedin'  => 'LinkedIn',
+		'facebook'  => 'Facebook',
+		'instagram' => 'Instagram',
+		'tiktok'    => 'TikTok',
+		'email'     => __( 'Email', 'altijara' ),
+		'reddit'    => 'Reddit',
+		'pinterest' => 'Pinterest',
+		'copy'      => __( 'Copy link', 'altijara' ),
+	);
+}
+
+/**
+ * Icon choices for custom share buttons.
+ *
+ * @return array<string, string>
+ */
+function altijara_article_share_icon_choices() {
+	$built = altijara_article_share_platform_choices();
+	unset( $built['copy'], $built['email'] );
+	$built['custom'] = __( 'Generic / other', 'altijara' );
+	return $built;
+}
+
+/**
+ * Platforms that copy the article link (no native web share URL).
+ *
+ * @return string[]
+ */
+function altijara_article_share_copy_style_platforms() {
+	return array( 'copy', 'instagram', 'tiktok' );
+}
+
+/**
+ * Enabled built-in share platform keys from article settings.
+ *
+ * @return string[]
+ */
+function altijara_get_article_share_platforms() {
+	$settings = function_exists( 'altijara_get_article_settings' ) ? altijara_get_article_settings() : array();
+	$raw      = isset( $settings['share_platforms'] ) && is_array( $settings['share_platforms'] )
+		? $settings['share_platforms']
+		: array( 'whatsapp', 'x', 'linkedin', 'facebook', 'telegram', 'copy' );
+	$allowed  = array_keys( altijara_article_share_platform_choices() );
+	$out      = array();
+	foreach ( $raw as $p ) {
+		$p = sanitize_key( $p );
+		if ( $p && in_array( $p, $allowed, true ) ) {
+			$out[] = $p;
+		}
+	}
+	return array_values( array_unique( $out ) );
+}
+
+/**
+ * Enabled custom share buttons from article settings.
+ *
+ * @return array<int, array{label:string,url_template:string,icon:string}>
+ */
+function altijara_get_article_share_extra() {
+	$settings = function_exists( 'altijara_get_article_settings' ) ? altijara_get_article_settings() : array();
+	$raw      = isset( $settings['share_extra'] ) && is_array( $settings['share_extra'] ) ? $settings['share_extra'] : array();
+	$out      = array();
+	foreach ( $raw as $row ) {
+		if ( ! is_array( $row ) || empty( $row['enabled'] ) ) {
+			continue;
+		}
+		$label = isset( $row['label'] ) ? sanitize_text_field( $row['label'] ) : '';
+		$tpl   = isset( $row['url_template'] ) ? trim( (string) $row['url_template'] ) : '';
+		if ( '' === $label || '' === $tpl ) {
+			continue;
+		}
+		$out[] = array(
+			'label'        => $label,
+			'url_template' => $tpl,
+			'icon'         => sanitize_key( $row['icon'] ?? 'custom' ),
+		);
+	}
+	return $out;
+}
+
+/**
+ * Replace {url} / {title} placeholders in a share URL template.
+ *
+ * @param string $template Template.
+ * @param string $url      Article URL.
+ * @param string $title    Article title.
+ * @return string
+ */
+function altijara_article_share_fill_template( $template, $url, $title ) {
+	$template = (string) $template;
+	$url      = (string) $url;
+	$title    = (string) $title;
+	$replaced = str_replace(
+		array( '{url}', '{title}', '{URL}', '{TITLE}' ),
+		array( rawurlencode( $url ), rawurlencode( $title ), rawurlencode( $url ), rawurlencode( $title ) ),
+		$template
+	);
+	return esc_url_raw( $replaced );
+}
+
+/**
+ * Build share URL for a built-in platform.
+ *
+ * @param string $platform Platform key.
+ * @param string $url      Article URL.
+ * @param string $title    Article title.
+ * @return string Empty for copy-style (handled in JS).
+ */
+function altijara_article_share_url( $platform, $url, $title ) {
+	$url   = (string) $url;
+	$title = (string) $title;
+	switch ( sanitize_key( $platform ) ) {
+		case 'whatsapp':
+			return 'https://wa.me/?text=' . rawurlencode( $title . ' ' . $url );
+		case 'telegram':
+			return 'https://t.me/share/url?url=' . rawurlencode( $url ) . '&text=' . rawurlencode( $title );
+		case 'x':
+		case 'twitter':
+			return 'https://twitter.com/intent/tweet?url=' . rawurlencode( $url ) . '&text=' . rawurlencode( $title );
+		case 'linkedin':
+			return 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode( $url );
+		case 'facebook':
+			return 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode( $url );
+		case 'email':
+			return 'mailto:?subject=' . rawurlencode( $title ) . '&body=' . rawurlencode( $title . "\n\n" . $url );
+		case 'reddit':
+			return 'https://www.reddit.com/submit?url=' . rawurlencode( $url ) . '&title=' . rawurlencode( $title );
+		case 'pinterest':
+			return 'https://pinterest.com/pin/create/button/?url=' . rawurlencode( $url ) . '&description=' . rawurlencode( $title );
+		default:
+			return '';
+	}
+}
+
+/**
+ * SVG for share toolbar (telegram + copy + email + generic extras).
+ *
+ * @param string $platform Platform.
+ * @return string Inner SVG paths.
+ */
+function altijara_article_share_svg_inner( $platform ) {
+	$platform = sanitize_key( $platform );
+	if ( 'telegram' === $platform ) {
+		return '<path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>';
+	}
+	if ( 'copy' === $platform ) {
+		return '<path fill="none" stroke="currentColor" stroke-width="2" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path fill="none" stroke="currentColor" stroke-width="2" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>';
+	}
+	if ( 'email' === $platform ) {
+		return '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>';
+	}
+	if ( 'reddit' === $platform ) {
+		return '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.14 6.3c.55 0 1 .45 1 1 0 .4-.24.74-.58.9a3.4 3.4 0 0 1-.02.48c0 2.44-2.83 4.42-6.32 4.42H12c-3.49 0-6.32-1.98-6.32-4.42 0-.16 0-.32.02-.48A1.05 1.05 0 0 1 5.12 9.3c0-.55.45-1 1-1 .36 0 .67.19.84.47A6.7 6.7 0 0 1 12 7.7c1.85 0 3.5.6 4.78 1.57.17-.28.48-.47.84-.47zM8.8 12.1a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zm6.4 0a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM12 17.4c-1.35 0-2.54-.45-3.3-1.14-.2-.18-.22-.48-.04-.68.18-.2.48-.22.68-.04.55.5 1.5.86 2.66.86s2.11-.36 2.66-.86c.2-.18.5-.16.68.04.18.2.16.5-.04.68-.76.69-1.95 1.14-3.3 1.14z"/>';
+	}
+	if ( 'pinterest' === $platform ) {
+		return '<path d="M12 2C6.48 2 2 6.48 2 12c0 4.22 2.61 7.83 6.3 9.32-.09-.79-.17-2.01.03-2.87.18-.78 1.16-4.96 1.16-4.96s-.3-.59-.3-1.47c0-1.38.8-2.41 1.8-2.41.85 0 1.26.64 1.26 1.4 0 .85-.54 2.13-.82 3.31-.23.99.5 1.8 1.47 1.8 1.77 0 3.13-1.87 3.13-4.56 0-2.38-1.71-4.05-4.16-4.05-2.83 0-4.5 2.12-4.5 4.32 0 .85.33 1.77.74 2.27.08.1.09.19.07.29l-.28 1.12c-.04.18-.14.22-.32.13-1.2-.56-1.95-2.32-1.95-3.74 0-3.05 2.21-5.85 6.39-5.85 3.35 0 5.96 2.39 5.96 5.58 0 3.33-2.1 6.01-5.01 6.01-.98 0-1.9-.51-2.21-1.11l-.6 2.29c-.22.84-.81 1.89-1.21 2.53A10 10 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/>';
+	}
+	if ( 'custom' === $platform ) {
+		return '<path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>';
+	}
+	$from_social = altijara_social_svg_inner( $platform );
+	return $from_social ? $from_social : altijara_article_share_svg_inner( 'custom' );
+}
+
+/**
+ * Render one share icon button (copy-style or link).
+ *
+ * @param string $label   Accessible label.
+ * @param string $inner   SVG inner markup.
+ * @param string $share   Share URL (ignored when $as_copy).
+ * @param bool   $as_copy Render as copy-link button.
+ * @param bool   $stroke  Stroke-style SVG (copy-link icon only).
+ */
+function altijara_render_article_share_button( $label, $inner, $share = '', $as_copy = false, $stroke = false ) {
+	if ( ! $inner ) {
+		return;
+	}
+	if ( $as_copy || '' === (string) $share ) {
+		if ( $stroke ) {
+			printf(
+				'<button type="button" class="btn-share-icon" onclick="typeof copyArticleLink===\'function\'&&copyArticleLink()" title="%1$s" aria-label="%1$s"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">%2$s</svg></button>',
+				esc_attr( $label ),
+				$inner // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			);
+			return;
+		}
+		printf(
+			'<button type="button" class="btn-share-icon" onclick="typeof copyArticleLink===\'function\'&&copyArticleLink()" title="%1$s" aria-label="%1$s"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">%2$s</svg></button>',
+			esc_attr( $label ),
+			$inner // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		);
+		return;
+	}
+	printf(
+		'<a class="btn-share-icon" href="%1$s" target="_blank" rel="noopener noreferrer" title="%2$s" aria-label="%2$s"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">%3$s</svg></a>',
+		esc_url( $share ),
+		esc_attr( $label ),
+		$inner // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	);
+}
+
+/**
+ * Render article share toolbar from admin-selected + custom platforms.
+ *
+ * @param int $post_id Post ID.
+ */
+function altijara_render_article_share_actions( $post_id = 0 ) {
+	$post_id   = $post_id ? absint( $post_id ) : get_the_ID();
+	$platforms = altijara_get_article_share_platforms();
+	$extra     = altijara_get_article_share_extra();
+	if ( empty( $platforms ) && empty( $extra ) ) {
+		return;
+	}
+	$url    = get_permalink( $post_id );
+	$title  = get_the_title( $post_id );
+	$labels = altijara_article_share_platform_choices();
+	$copy_style = altijara_article_share_copy_style_platforms();
+	echo '<div class="article-share-actions">';
+	foreach ( $platforms as $platform ) {
+		$label = isset( $labels[ $platform ] ) ? $labels[ $platform ] : $platform;
+		$inner = altijara_article_share_svg_inner( $platform );
+		if ( in_array( $platform, $copy_style, true ) ) {
+			// Instagram / TikTok have no web share URL — copy link for paste in-app.
+			if ( 'instagram' === $platform ) {
+				$label = __( 'Instagram (copy link)', 'altijara' );
+			} elseif ( 'tiktok' === $platform ) {
+				$label = __( 'TikTok (copy link)', 'altijara' );
+			}
+			altijara_render_article_share_button( $label, $inner, '', true, 'copy' === $platform );
+			continue;
+		}
+		$share = altijara_article_share_url( $platform, $url, $title );
+		if ( ! $share ) {
+			continue;
+		}
+		altijara_render_article_share_button( $label, $inner, $share, false, false );
+	}
+	foreach ( $extra as $row ) {
+		$share = altijara_article_share_fill_template( $row['url_template'], $url, $title );
+		if ( ! $share ) {
+			continue;
+		}
+		$icon  = $row['icon'] ? $row['icon'] : 'custom';
+		$inner = altijara_article_share_svg_inner( $icon );
+		altijara_render_article_share_button( $row['label'], $inner, $share, false, false );
+	}
+	echo '</div>';
+}

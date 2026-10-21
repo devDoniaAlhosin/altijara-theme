@@ -41,24 +41,36 @@ function altijara_render_section_admin_card( $id, $section, $args = array() ) {
 		'pair_with'    => '',
 	), $section );
 
-	$is_hero = ! empty( $args['is_hero'] ) || 'hero' === ( $section['zone'] ?? '' ) || in_array( $id, altijara_hero_section_ids(), true );
+	$is_hero = ! empty( $args['is_hero'] ) || 'hero' === ( $section['zone'] ?? '' ) || ( function_exists( 'altijara_hero_section_ids' ) && in_array( $id, altijara_hero_section_ids(), true ) );
 	$widget  = ! empty( $section['widget'] ) ? $section['widget'] : altijara_layout_to_widget( $section['layout'] ?? '' );
 	$wdef    = function_exists( 'altijara_get_widget_definition' ) ? altijara_get_widget_definition( $widget ) : null;
 	$choices = altijara_get_category_choices();
 	$tags    = altijara_get_tag_choices();
 	$manual  = ! empty( $section['manual_posts'] ) ? implode( ',', array_map( 'absint', (array) $section['manual_posts'] ) ) : '';
 	$issues  = ! empty( $section['issue_ids'] ) ? implode( ',', array_map( 'absint', (array) $section['issue_ids'] ) ) : '';
-	$field   = 'altijara_sections[' . esc_attr( $id ) . ']';
+	$prefix  = ! empty( $args['field_prefix'] ) ? (string) $args['field_prefix'] : 'altijara_sections';
+	$order_f = ! empty( $args['order_field'] ) ? (string) $args['order_field'] : 'altijara_sections_order';
+	$field   = $prefix . '[' . esc_attr( $id ) . ']';
 	$titles  = altijara_get_post_titles_map( $section['manual_posts'] ?? array() );
 	$issue_t = altijara_get_post_titles_map( $section['issue_ids'] ?? array() );
 	$label   = altijara_strip_hero_label_prefix( isset( $section['label'] ) ? (string) $section['label'] : (string) $id );
 	$family  = ( 'article_grid' === $widget ) ? 'card' : 'block';
+	$variant = isset( $section['variant'] ) ? (string) $section['variant'] : 'default';
+	$paired  = ! empty( $section['pair_with'] ) ? '1' : '';
+	$shape   = function_exists( 'altijara_builder_shape_key' )
+		? altijara_builder_shape_key( $widget, $variant, $paired )
+		: 'block';
 	?>
-	<details class="altijara-section-card" data-section-id="<?php echo esc_attr( $id ); ?>" data-widget="<?php echo esc_attr( $widget ); ?>" data-zone="<?php echo esc_attr( $is_hero ? 'hero' : 'body' ); ?>" <?php echo ! empty( $section['visible'] ) ? 'open' : ''; ?>>
+	<details class="altijara-section-card" data-section-id="<?php echo esc_attr( $id ); ?>" data-widget="<?php echo esc_attr( $widget ); ?>" data-zone="<?php echo esc_attr( $is_hero ? 'hero' : 'body' ); ?>" data-shape="<?php echo esc_attr( $shape ); ?>" <?php echo ! empty( $section['visible'] ) ? 'open' : ''; ?>>
 		<summary>
 			<?php if ( ! $is_hero ) : ?>
 				<span class="altijara-section-drag dashicons dashicons-menu" title="<?php esc_attr_e( 'Drag to reorder', 'altijara' ); ?>" aria-hidden="true"></span>
 			<?php endif; ?>
+			<?php
+			if ( function_exists( 'altijara_render_builder_shape' ) ) {
+				altijara_render_builder_shape( $shape, 'sm' );
+			}
+			?>
 			<strong class="altijara-section-summary-label"><?php echo esc_html( $label ); ?></strong>
 			<span class="altijara-widget-badge altijara-widget-badge--<?php echo esc_attr( $family ); ?>"><?php echo esc_html( ( is_array( $wdef ) && ! empty( $wdef['label'] ) ) ? $wdef['label'] : $widget ); ?></span>
 			<span class="altijara-section-status"><?php echo ! empty( $section['visible'] ) ? esc_html__( 'ظاهر', 'altijara' ) : esc_html__( 'مخفي', 'altijara' ); ?></span>
@@ -71,7 +83,7 @@ function altijara_render_section_admin_card( $id, $section, $args = array() ) {
 			<input type="hidden" name="<?php echo esc_attr( $field ); ?>[zone]" value="<?php echo esc_attr( $is_hero ? 'hero' : 'body' ); ?>">
 			<input type="hidden" name="<?php echo esc_attr( $field ); ?>[pair_with]" class="altijara-section-pair" value="<?php echo esc_attr( $section['pair_with'] ?? '' ); ?>">
 			<?php if ( ! $is_hero ) : ?>
-				<input type="hidden" class="altijara-body-order-item" name="altijara_sections_order[]" value="<?php echo esc_attr( $id ); ?>">
+				<input type="hidden" class="altijara-body-order-item" name="<?php echo esc_attr( $order_f ); ?>[]" value="<?php echo esc_attr( $id ); ?>">
 			<?php endif; ?>
 
 			<p>
@@ -234,6 +246,18 @@ function altijara_render_section_admin_card( $id, $section, $args = array() ) {
 							</option>
 						<?php endforeach; ?>
 					</select>
+				</p>
+			<?php endif; ?>
+
+			<?php if ( altijara_widget_supports( $widget, 'band' ) ) : ?>
+				<p style="display:flex;gap:16px;flex-wrap:wrap;">
+					<label><?php esc_html_e( 'Min issue #', 'altijara' ); ?>
+						<input type="number" min="0" max="9999" name="<?php echo esc_attr( $field ); ?>[band_min]" value="<?php echo esc_attr( (string) (int) ( $section['band_min'] ?? 0 ) ); ?>" style="width:80px">
+					</label>
+					<label><?php esc_html_e( 'Max issue #', 'altijara' ); ?>
+						<input type="number" min="0" max="9999" name="<?php echo esc_attr( $field ); ?>[band_max]" value="<?php echo esc_attr( (string) (int) ( $section['band_max'] ?? 0 ) ); ?>" style="width:80px">
+					</label>
+					<span class="description"><?php esc_html_e( '0 = no bound. Lead uses offset/count; carousel filters by number range.', 'altijara' ); ?></span>
 				</p>
 			<?php endif; ?>
 

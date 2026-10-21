@@ -36,42 +36,25 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 						</td>
 					</tr>
 				</table>
-				<h2><?php esc_html_e( 'Category map', 'altijara' ); ?></h2>
-				<p class="description"><?php esc_html_e( 'Maps stable theme keys (menus, defaults) to live WordPress categories. Homepage section cards pick categories directly; this map is the fallback for keys like business → your live slug/ID.', 'altijara' ); ?></p>
 				<?php
-				$cat_choices = function_exists( 'altijara_get_category_choices' ) ? altijara_get_category_choices() : array( '' => '—' );
+				$home2_edit = 0;
+				if ( function_exists( 'altijara_get_static_front_page_id' ) ) {
+					$home2_edit = altijara_get_static_front_page_id();
+					if ( $home2_edit && 'home-2.php' !== (string) get_page_template_slug( $home2_edit ) ) {
+						$home2_edit = 0;
+					}
+				}
 				?>
-				<table class="form-table">
-					<?php foreach ( $map as $key => $value ) : ?>
-						<?php
-						$current = is_scalar( $value ) ? (string) $value : '';
-						$selected = $current;
-						if ( $current && ! is_numeric( $current ) && function_exists( 'altijara_resolve_category_id' ) ) {
-							$rid = altijara_resolve_category_id( is_numeric( $current ) ? $current : (string) $key );
-							// Prefer resolving via map value as slug.
-							$term = get_term_by( 'slug', sanitize_title( $current ), 'category' );
-							if ( $term && ! is_wp_error( $term ) ) {
-								$selected = (string) (int) $term->term_id;
-							} elseif ( $rid ) {
-								$selected = (string) $rid;
-							}
-						}
-						?>
-						<tr>
-							<th><label><?php echo esc_html( (string) $key ); ?></label></th>
-							<td>
-								<select name="altijara_category_map[<?php echo esc_attr( (string) $key ); ?>]" class="regular-text">
-									<?php foreach ( $cat_choices as $val => $lab ) : ?>
-										<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $selected, (string) $val ); ?>><?php echo esc_html( $lab ); ?></option>
-									<?php endforeach; ?>
-								</select>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-				</table>
+				<p class="description">
+					<?php esc_html_e( 'Homepage content (labels, counts, categories, specific posts) is edited on the Front Page using the “Home 2” template → Altijara Page Settings metabox.', 'altijara' ); ?>
+					<?php if ( $home2_edit ) : ?>
+						<a href="<?php echo esc_url( get_edit_post_link( $home2_edit ) ); ?>"><?php esc_html_e( 'Edit Home 2 page', 'altijara' ); ?></a>
+					<?php else : ?>
+						<?php esc_html_e( 'Run theme setup (Tools) or set Settings → Reading → Front page to a page with template Home 2.', 'altijara' ); ?>
+					<?php endif; ?>
+				</p>
 				<p class="altijara-admin-actions">
 					<?php submit_button( __( 'Save General', 'altijara' ), 'primary', 'submit', false ); ?>
-					<button type="submit" name="altijara_detect_category_map" class="button button-secondary" value="1"><?php esc_html_e( 'Detect from site', 'altijara' ); ?></button>
 				</p>
 
 			<?php elseif ( 'design' === $id ) : ?>
@@ -245,7 +228,7 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 				<button type="submit" name="altijara_reset_group" value="header" class="button" onclick="return confirm('Reset header settings to defaults?');"><?php esc_html_e( 'Reset to defaults', 'altijara' ); ?></button>
 
 			<?php elseif ( 'navigation' === $id ) : ?>
-				<p class="description"><?php esc_html_e( 'Primary section links should open category archives (/category/{slug}/), not Pages. Use Sync below after updating the category map.', 'altijara' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Primary section links should open category archives (/category/{slug}/), not Pages. Use Sync below if menu items point at Pages instead of categories.', 'altijara' ); ?></p>
 				<?php
 				$locs     = get_registered_nav_menus();
 				$assigned = get_nav_menu_locations();
@@ -273,11 +256,13 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 				<p class="altijara-admin-actions">
 					<button type="submit" name="altijara_rebuild_primary_nav" class="button button-primary" value="1"><?php esc_html_e( 'Rebuild primary navbar (all categories)', 'altijara' ); ?></button>
 					<button type="submit" name="altijara_rebuild_utility_nav" class="button button-primary" value="1"><?php esc_html_e( 'Rebuild top bar (About / Contact / Advertise)', 'altijara' ); ?></button>
+					<button type="submit" name="altijara_rebuild_footer_nav" class="button button-primary" value="1"><?php esc_html_e( 'Rebuild footer menus', 'altijara' ); ?></button>
+					<button type="submit" name="altijara_rerun_setup" class="button" value="1"><?php esc_html_e( 'Run theme setup now', 'altijara' ); ?></button>
 					<button type="submit" name="altijara_sync_nav_categories" class="button" value="1"><?php esc_html_e( 'Sync menu → category URLs', 'altijara' ); ?></button>
 					<a class="button" href="<?php echo esc_url( admin_url( 'nav-menus.php' ) ); ?>"><?php esc_html_e( 'Open Menus editor', 'altijara' ); ?></a>
 					<a class="button" href="<?php echo esc_url( admin_url( 'nav-menus.php?action=locations' ) ); ?>"><?php esc_html_e( 'Manage locations', 'altijara' ); ?></a>
 				</p>
-				<p class="description"><?php esc_html_e( 'Primary: category archives. Top bar: من نحن → /about/ · اتصل بنا → /contact/ · أعلن معنا → /advertise/ (creates pages if missing).', 'altijara' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Primary: category archives. Top bar / footer: theme utility pages (about-2 if about already exists). Upload while active runs setup on version bump.', 'altijara' ); ?></p>
 
 			<?php elseif ( 'homepage' === $id ) : ?>
 				<p class="description"><?php esc_html_e( 'Build the homepage like WPBakery: edit the fixed Hero grid, then add Cards or Blocks below and drag to reorder.', 'altijara' ); ?></p>
@@ -294,10 +279,14 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 
 			<?php elseif ( 'archives' === $id ) : ?>
 				<?php
-				$archive_map     = is_array( $opts['archive_layouts'] ?? null ) ? $opts['archive_layouts'] : array();
-				$layout_choices  = function_exists( 'altijara_archive_layout_choices' ) ? altijara_archive_layout_choices() : array( 'posts' => 'Posts', 'issues' => 'Issues' );
-				$full_hero_ids   = function_exists( 'altijara_get_full_hero_category_ids' ) ? altijara_get_full_hero_category_ids() : array();
-				$archive_cats    = get_categories(
+				$magazine_ids  = function_exists( 'altijara_get_archive_magazine_ids' ) ? altijara_get_archive_magazine_ids() : array();
+				$full_hero_ids = function_exists( 'altijara_get_full_hero_category_ids' ) ? altijara_get_full_hero_category_ids() : array();
+				$counts        = function_exists( 'altijara_get_archive_counts' ) ? altijara_get_archive_counts() : array(
+					'sidebar_count' => 3,
+					'featured_rows' => 2,
+					'news_size'     => 10,
+				);
+				$archive_cats  = get_categories(
 					array(
 						'hide_empty' => false,
 						'orderby'    => 'name',
@@ -307,50 +296,75 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 				?>
 				<div class="altijara-callout">
 					<strong><?php esc_html_e( 'Category archives', 'altijara' ); ?></strong>
-					<p><?php esc_html_e( 'Choose Posts archive or Magazine issues layout for each category. The CPT archive /issues/ always uses the issues layout.', 'altijara' ); ?></p>
+					<p><?php esc_html_e( 'All categories use the Posts archive by default. Select only the categories that should use the Magazine issues layout. The CPT archive /issues/ always uses the issues layout.', 'altijara' ); ?></p>
 				</div>
-				<table class="widefat striped altijara-admin-table">
-					<thead>
-						<tr>
-							<th><?php esc_html_e( 'Category', 'altijara' ); ?></th>
-							<th><?php esc_html_e( 'Slug', 'altijara' ); ?></th>
-							<th><?php esc_html_e( 'Layout', 'altijara' ); ?></th>
-						</tr>
-					</thead>
-					<tbody>
+
+				<div class="altijara-admin-block">
+					<h2 class="altijara-admin-block__title"><?php esc_html_e( 'Magazine issues layout', 'altijara' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'Multi-select categories that open the magazine (issues) archive UI.', 'altijara' ); ?></p>
 					<?php if ( empty( $archive_cats ) || is_wp_error( $archive_cats ) ) : ?>
-						<tr><td colspan="3"><?php esc_html_e( 'No categories found.', 'altijara' ); ?></td></tr>
+						<p><?php esc_html_e( 'No categories found.', 'altijara' ); ?></p>
 					<?php else : ?>
-						<?php foreach ( $archive_cats as $cat ) : ?>
-							<?php
-							if ( ! $cat instanceof WP_Term ) {
-								continue;
-							}
-							$tid      = (int) $cat->term_id;
-							$selected = isset( $archive_map[ (string) $tid ] ) ? (string) $archive_map[ (string) $tid ] : 'posts';
-							?>
-							<tr>
-								<td>
-									<strong><?php echo esc_html( $cat->name ); ?></strong>
-									<div class="description"><a href="<?php echo esc_url( get_category_link( $tid ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'View archive', 'altijara' ); ?></a></div>
-								</td>
-								<td><code><?php echo esc_html( $cat->slug ); ?></code></td>
-								<td>
-									<select name="altijara_archive_layouts[<?php echo esc_attr( (string) $tid ); ?>]">
-										<?php foreach ( $layout_choices as $lval => $llab ) : ?>
-											<option value="<?php echo esc_attr( $lval ); ?>" <?php selected( $selected, $lval ); ?>><?php echo esc_html( $llab ); ?></option>
-										<?php endforeach; ?>
-									</select>
-								</td>
-							</tr>
-						<?php endforeach; ?>
+						<div class="altijara-checkbox-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 16px;margin:12px 0 8px;">
+							<?php foreach ( $archive_cats as $cat ) : ?>
+								<?php
+								if ( ! $cat instanceof WP_Term ) {
+									continue;
+								}
+								$tid = (int) $cat->term_id;
+								?>
+								<label style="display:flex;align-items:flex-start;gap:8px;">
+									<input type="checkbox" name="altijara_archive_magazine_ids[]" value="<?php echo esc_attr( (string) $tid ); ?>" <?php checked( in_array( $tid, $magazine_ids, true ) ); ?>>
+									<span>
+										<strong><?php echo esc_html( $cat->name ); ?></strong>
+										<code style="display:block;font-size:11px;opacity:.75;"><?php echo esc_html( $cat->slug ); ?></code>
+									</span>
+								</label>
+							<?php endforeach; ?>
+						</div>
 					<?php endif; ?>
-					</tbody>
-				</table>
+					<input type="hidden" name="altijara_archive_magazine_ids_submitted" value="1">
+				</div>
+
+				<div class="altijara-admin-block" style="margin-top:28px;">
+					<h2 class="altijara-admin-block__title"><?php esc_html_e( 'Posts archive counts', 'altijara' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'Controls the recommended sidebar, featured card rows (4 cards per row), and “أحدث الأخبار” page size before pagination.', 'altijara' ); ?></p>
+					<table class="form-table">
+						<tr>
+							<th><label for="altijara_sidebar_count"><?php esc_html_e( 'Sidebar posts', 'altijara' ); ?></label></th>
+							<td>
+								<select name="altijara_archive_counts[sidebar_count]" id="altijara_sidebar_count">
+									<option value="3" <?php selected( (int) $counts['sidebar_count'], 3 ); ?>>3</option>
+									<option value="4" <?php selected( (int) $counts['sidebar_count'], 4 ); ?>>4</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="altijara_featured_rows"><?php esc_html_e( 'Featured card rows', 'altijara' ); ?></label></th>
+							<td>
+								<select name="altijara_archive_counts[featured_rows]" id="altijara_featured_rows">
+									<option value="1" <?php selected( (int) $counts['featured_rows'], 1 ); ?>><?php esc_html_e( '1 row (4 cards)', 'altijara' ); ?></option>
+									<option value="2" <?php selected( (int) $counts['featured_rows'], 2 ); ?>><?php esc_html_e( '2 rows (8 cards)', 'altijara' ); ?></option>
+									<option value="3" <?php selected( (int) $counts['featured_rows'], 3 ); ?>><?php esc_html_e( '3 rows (12 cards)', 'altijara' ); ?></option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="altijara_news_size"><?php esc_html_e( 'Latest news per page', 'altijara' ); ?></label></th>
+							<td>
+								<select name="altijara_archive_counts[news_size]" id="altijara_news_size">
+									<option value="10" <?php selected( (int) $counts['news_size'], 10 ); ?>>10</option>
+									<option value="15" <?php selected( (int) $counts['news_size'], 15 ); ?>>15</option>
+								</select>
+							</td>
+						</tr>
+					</table>
+					<input type="hidden" name="altijara_archive_counts_submitted" value="1">
+				</div>
 
 				<div class="altijara-admin-block" style="margin-top:28px;">
 					<h2 class="altijara-admin-block__title"><?php esc_html_e( 'Posts hero layout', 'altijara' ); ?></h2>
-					<p class="description"><?php esc_html_e( 'Select categories that show a single full-width hero (no recommended side column). Unselected categories keep hero + 3 side posts. Defaults match the old prototype: سيارات، لقاءات، سياحة، المعارض.', 'altijara' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Select categories that show a single full-width hero (no recommended side column).', 'altijara' ); ?></p>
 					<?php if ( empty( $archive_cats ) || is_wp_error( $archive_cats ) ) : ?>
 						<p><?php esc_html_e( 'No categories found.', 'altijara' ); ?></p>
 					<?php else : ?>
@@ -372,6 +386,35 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
+					<input type="hidden" name="altijara_archive_full_hero_submitted" value="1">
+				</div>
+
+				<div class="altijara-admin-block" style="margin-top:28px;">
+					<h2 class="altijara-admin-block__title"><?php esc_html_e( 'Issues archive modules', 'altijara' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'JNews-style builder for /issues/ (and magazine category archives). Add lead + carousel bands or other widgets. Reset restores the theme preset.', 'altijara' ); ?></p>
+					<label style="display:inline-block;margin:8px 0 14px;">
+						<input type="checkbox" name="altijara_issues_layout_reset" value="1">
+						<?php esc_html_e( 'Reset issues layout to theme default', 'altijara' ); ?>
+					</label>
+					<input type="hidden" name="altijara_issues_layout_submitted" value="1">
+					<?php
+					$issues_pack = function_exists( 'altijara_get_issues_layout' )
+						? altijara_get_issues_layout( true )
+						: array( 'sections' => array(), 'order' => array() );
+					if ( function_exists( 'altijara_render_layout_builder' ) ) {
+						altijara_render_layout_builder(
+							array(
+								'builder_id'   => 'issues_archive',
+								'field_prefix' => 'altijara_issues_layout_sections',
+								'order_field'  => 'altijara_issues_layout_order',
+								'sections'     => $issues_pack['sections'],
+								'order'        => $issues_pack['order'],
+								'surface'      => 'issues',
+								'lock_hero'    => false,
+							)
+						);
+					}
+					?>
 				</div>
 				<?php submit_button( __( 'Save Archive Layouts', 'altijara' ) ); ?>
 
@@ -490,18 +533,276 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 				<?php submit_button( __( 'Save Social Links', 'altijara' ) ); ?>
 				<button type="submit" name="altijara_reset_group" value="social" class="button" onclick="return confirm('Reset social links to defaults?');"><?php esc_html_e( 'Reset to defaults', 'altijara' ); ?></button>
 
+				<?php
+				$auth = function_exists( 'altijara_get_auth_settings' ) ? altijara_get_auth_settings() : array();
+				$cb   = function_exists( 'altijara_oauth_callback_url' ) ? altijara_oauth_callback_url() : home_url( '/?altijara_oauth_callback=1' );
+				?>
+				<div class="altijara-admin-block" style="margin-top:32px;">
+					<h2 class="altijara-admin-block__title"><?php esc_html_e( 'Social login (Google & Facebook)', 'altijara' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'Enable buttons on the login and subscribe pages. Create OAuth apps in Google Cloud Console and Meta for Developers, then paste credentials below.', 'altijara' ); ?></p>
+					<p class="description"><strong><?php esc_html_e( 'Authorized redirect URI (use in both consoles):', 'altijara' ); ?></strong><br><code><?php echo esc_html( $cb ); ?></code></p>
+					<table class="form-table">
+						<tr>
+							<th><?php esc_html_e( 'Google', 'altijara' ); ?></th>
+							<td>
+								<label style="display:block;margin-bottom:10px;">
+									<input type="checkbox" name="altijara_auth[google_enabled]" value="1" <?php checked( ! empty( $auth['google_enabled'] ) ); ?>>
+									<?php esc_html_e( 'Enable Google login', 'altijara' ); ?>
+								</label>
+								<p>
+									<label><?php esc_html_e( 'Client ID', 'altijara' ); ?><br>
+										<input class="large-text" type="text" name="altijara_auth[google_client_id]" value="<?php echo esc_attr( $auth['google_client_id'] ?? '' ); ?>" autocomplete="off">
+									</label>
+								</p>
+								<p>
+									<label><?php esc_html_e( 'Client Secret', 'altijara' ); ?><br>
+										<input class="large-text" type="password" name="altijara_auth[google_client_secret]" value="<?php echo esc_attr( $auth['google_client_secret'] ?? '' ); ?>" autocomplete="new-password">
+									</label>
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Facebook', 'altijara' ); ?></th>
+							<td>
+								<label style="display:block;margin-bottom:10px;">
+									<input type="checkbox" name="altijara_auth[facebook_enabled]" value="1" <?php checked( ! empty( $auth['facebook_enabled'] ) ); ?>>
+									<?php esc_html_e( 'Enable Facebook login', 'altijara' ); ?>
+								</label>
+								<p>
+									<label><?php esc_html_e( 'App ID', 'altijara' ); ?><br>
+										<input class="large-text" type="text" name="altijara_auth[facebook_app_id]" value="<?php echo esc_attr( $auth['facebook_app_id'] ?? '' ); ?>" autocomplete="off">
+									</label>
+								</p>
+								<p>
+									<label><?php esc_html_e( 'App Secret', 'altijara' ); ?><br>
+										<input class="large-text" type="password" name="altijara_auth[facebook_app_secret]" value="<?php echo esc_attr( $auth['facebook_app_secret'] ?? '' ); ?>" autocomplete="new-password">
+									</label>
+								</p>
+							</td>
+						</tr>
+					</table>
+					<?php submit_button( __( 'Save Social Login', 'altijara' ) ); ?>
+				</div>
+
 			<?php elseif ( 'article' === $id ) : ?>
+				<?php
+				$article_cfg = function_exists( 'altijara_sanitize_article_settings' )
+					? altijara_sanitize_article_settings( $article )
+					: $article;
+				$latest_cfg  = is_array( $article_cfg['latest'] ?? null ) ? $article_cfg['latest'] : array( 'count' => 5, 'source' => 'same', 'category_ids' => array() );
+				$mr_cfg      = is_array( $article_cfg['most_read'] ?? null ) ? $article_cfg['most_read'] : array( 'count' => 7, 'source' => 'same', 'category_ids' => array() );
+				$article_cats = get_categories(
+					array(
+						'hide_empty' => false,
+						'orderby'    => 'name',
+						'order'      => 'ASC',
+					)
+				);
+				?>
 				<table class="form-table">
 					<tr>
-						<th><?php esc_html_e( 'Related articles', 'altijara' ); ?></th>
+						<th><?php esc_html_e( 'Related articles (bottom)', 'altijara' ); ?></th>
 						<td>
-							<label><input type="checkbox" name="altijara_article[show_related]" value="1" <?php checked( ! empty( $article['show_related'] ) ); ?>> <?php esc_html_e( 'Show related posts', 'altijara' ); ?></label>
-							<label style="margin-inline-start:12px;"><?php esc_html_e( 'Count', 'altijara' ); ?>
-								<input type="number" min="1" max="12" name="altijara_article[related_count]" value="<?php echo esc_attr( (string) (int) ( $article['related_count'] ?? 2 ) ); ?>" style="width:70px">
+							<label style="display:block;margin-bottom:10px;">
+								<input type="checkbox" name="altijara_article[show_related]" value="1" <?php checked( ! empty( $article_cfg['show_related'] ) ); ?>>
+								<?php esc_html_e( 'Show “اقرأ ايضاً”', 'altijara' ); ?>
 							</label>
+							<label style="display:inline-block;margin-inline-end:16px;">
+								<?php esc_html_e( 'Articles before “تحميل المزيد”', 'altijara' ); ?>
+								<input type="number" min="1" max="12" name="altijara_article[related_count]" value="<?php echo esc_attr( (string) (int) ( $article_cfg['related_count'] ?? 2 ) ); ?>" style="width:70px;margin-inline-start:6px;">
+							</label>
+							<label style="display:inline-block;">
+								<?php esc_html_e( 'Articles per load more click', 'altijara' ); ?>
+								<input type="number" min="1" max="12" name="altijara_article[related_per_load]" value="<?php echo esc_attr( (string) (int) ( $article_cfg['related_per_load'] ?? 2 ) ); ?>" style="width:70px;margin-inline-start:6px;">
+							</label>
+							<p class="description"><?php esc_html_e( 'First number = how many cards show initially. Second = how many more appear each time the button is clicked.', 'altijara' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><?php esc_html_e( 'Share platforms', 'altijara' ); ?></th>
+						<td>
+							<p class="description" style="margin-top:0;"><?php esc_html_e( 'Choose which share buttons appear on single articles. Instagram and TikTok copy the link (no web share URL).', 'altijara' ); ?></p>
+							<input type="hidden" name="altijara_article[share_platforms_submitted]" value="1">
+							<div class="altijara-checkbox-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px 16px;margin-top:8px;">
+								<?php
+								$share_choices = function_exists( 'altijara_article_share_platform_choices' ) ? altijara_article_share_platform_choices() : array();
+								$share_on      = isset( $article_cfg['share_platforms'] ) && is_array( $article_cfg['share_platforms'] )
+									? array_map( 'strval', $article_cfg['share_platforms'] )
+									: array( 'whatsapp', 'x', 'linkedin', 'facebook', 'telegram', 'copy' );
+								foreach ( $share_choices as $pkey => $plabel ) :
+									?>
+									<label style="display:flex;align-items:center;gap:8px;">
+										<input type="checkbox" name="altijara_article[share_platforms][]" value="<?php echo esc_attr( $pkey ); ?>" <?php checked( in_array( $pkey, $share_on, true ) ); ?>>
+										<span><?php echo esc_html( $plabel ); ?></span>
+									</label>
+								<?php endforeach; ?>
+							</div>
+
+							<p class="description" style="margin:18px 0 8px;"><strong><?php esc_html_e( 'Custom share buttons', 'altijara' ); ?></strong> — <?php esc_html_e( 'Add any platform. Use {url} and {title} in the share URL template.', 'altijara' ); ?></p>
+							<?php
+							$share_extra  = isset( $article_cfg['share_extra'] ) && is_array( $article_cfg['share_extra'] ) ? $article_cfg['share_extra'] : array();
+							$share_icons  = function_exists( 'altijara_article_share_icon_choices' ) ? altijara_article_share_icon_choices() : array( 'custom' => __( 'Generic / other', 'altijara' ) );
+							if ( empty( $share_extra ) ) {
+								$share_extra = array(
+									array(
+										'enabled'      => false,
+										'label'        => '',
+										'url_template' => '',
+										'icon'         => 'custom',
+									),
+								);
+							}
+							?>
+							<table class="widefat striped altijara-admin-table" id="altijara-share-extra-table">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'On', 'altijara' ); ?></th>
+										<th><?php esc_html_e( 'Label', 'altijara' ); ?></th>
+										<th><?php esc_html_e( 'Share URL template', 'altijara' ); ?></th>
+										<th><?php esc_html_e( 'Icon', 'altijara' ); ?></th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody class="altijara-share-extra-rows">
+									<?php foreach ( $share_extra as $si => $srow ) : ?>
+										<tr class="altijara-share-extra-row">
+											<td><input type="checkbox" name="altijara_article[share_extra][<?php echo (int) $si; ?>][enabled]" value="1" <?php checked( ! empty( $srow['enabled'] ) ); ?>></td>
+											<td><input type="text" name="altijara_article[share_extra][<?php echo (int) $si; ?>][label]" value="<?php echo esc_attr( $srow['label'] ?? '' ); ?>" class="regular-text" placeholder="e.g. Threads"></td>
+											<td><input type="text" name="altijara_article[share_extra][<?php echo (int) $si; ?>][url_template]" value="<?php echo esc_attr( $srow['url_template'] ?? '' ); ?>" class="large-text" placeholder="https://…?url={url}&amp;text={title}"></td>
+											<td>
+												<select name="altijara_article[share_extra][<?php echo (int) $si; ?>][icon]">
+													<?php foreach ( $share_icons as $ik => $il ) : ?>
+														<option value="<?php echo esc_attr( $ik ); ?>" <?php selected( $srow['icon'] ?? 'custom', $ik ); ?>><?php echo esc_html( $il ); ?></option>
+													<?php endforeach; ?>
+												</select>
+											</td>
+											<td><button type="button" class="button-link-delete altijara-share-extra-remove"><?php esc_html_e( 'Remove', 'altijara' ); ?></button></td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+							<p style="margin-top:8px;">
+								<button type="button" class="button altijara-share-extra-add"><?php esc_html_e( 'Add share platform', 'altijara' ); ?></button>
+							</p>
+							<template id="altijara-share-extra-tpl">
+								<tr class="altijara-share-extra-row">
+									<td><input type="checkbox" name="altijara_article[share_extra][__i__][enabled]" value="1" checked></td>
+									<td><input type="text" name="altijara_article[share_extra][__i__][label]" value="" class="regular-text" placeholder="e.g. Threads"></td>
+									<td><input type="text" name="altijara_article[share_extra][__i__][url_template]" value="" class="large-text" placeholder="https://…?url={url}&amp;text={title}"></td>
+									<td>
+										<select name="altijara_article[share_extra][__i__][icon]">
+											<?php foreach ( $share_icons as $ik => $il ) : ?>
+												<option value="<?php echo esc_attr( $ik ); ?>" <?php selected( $ik, 'custom' ); ?>><?php echo esc_html( $il ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									</td>
+									<td><button type="button" class="button-link-delete altijara-share-extra-remove"><?php esc_html_e( 'Remove', 'altijara' ); ?></button></td>
+								</tr>
+							</template>
 						</td>
 					</tr>
 				</table>
+
+				<div class="altijara-admin-block" style="margin-top:24px;">
+					<h2 class="altijara-admin-block__title"><?php esc_html_e( 'Sidebar — أحدث الأخبار', 'altijara' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'Latest posts in the article sidebar. Use the article’s own category, or pick specific categories.', 'altijara' ); ?></p>
+					<table class="form-table">
+						<tr>
+							<th><label for="altijara_latest_count"><?php esc_html_e( 'Number of posts', 'altijara' ); ?></label></th>
+							<td>
+								<input type="number" id="altijara_latest_count" min="1" max="12" name="altijara_article[latest][count]" value="<?php echo esc_attr( (string) (int) ( $latest_cfg['count'] ?? 5 ) ); ?>" style="width:70px">
+							</td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Category source', 'altijara' ); ?></th>
+							<td>
+								<label style="display:block;margin-bottom:6px;">
+									<input type="radio" name="altijara_article[latest][source]" value="same" class="altijara-sidebar-source" data-target="altijara-latest-cats" <?php checked( ( $latest_cfg['source'] ?? 'same' ), 'same' ); ?>>
+									<?php esc_html_e( 'Same category as the article', 'altijara' ); ?>
+								</label>
+								<label style="display:block;margin-bottom:10px;">
+									<input type="radio" name="altijara_article[latest][source]" value="selected" class="altijara-sidebar-source" data-target="altijara-latest-cats" <?php checked( ( $latest_cfg['source'] ?? '' ), 'selected' ); ?>>
+									<?php esc_html_e( 'Selected categories', 'altijara' ); ?>
+								</label>
+								<div id="altijara-latest-cats" class="altijara-checkbox-grid" style="display:<?php echo ( 'selected' === ( $latest_cfg['source'] ?? '' ) ) ? 'grid' : 'none'; ?>;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px 16px;">
+									<?php
+									$latest_ids = isset( $latest_cfg['category_ids'] ) && is_array( $latest_cfg['category_ids'] ) ? array_map( 'absint', $latest_cfg['category_ids'] ) : array();
+									if ( ! empty( $article_cats ) && ! is_wp_error( $article_cats ) ) :
+										foreach ( $article_cats as $cat ) :
+											if ( ! $cat instanceof WP_Term ) {
+												continue;
+											}
+											?>
+											<label style="display:flex;align-items:flex-start;gap:8px;">
+												<input type="checkbox" name="altijara_article[latest][category_ids][]" value="<?php echo esc_attr( (string) (int) $cat->term_id ); ?>" <?php checked( in_array( (int) $cat->term_id, $latest_ids, true ) ); ?>>
+												<span><strong><?php echo esc_html( $cat->name ); ?></strong></span>
+											</label>
+											<?php
+										endforeach;
+									endif;
+									?>
+								</div>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class="altijara-admin-block" style="margin-top:28px;">
+					<h2 class="altijara-admin-block__title"><?php esc_html_e( 'Sidebar — الأكثر قراءة', 'altijara' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'Most-read list in the article sidebar. Same category as the article, or pick specific categories.', 'altijara' ); ?></p>
+					<table class="form-table">
+						<tr>
+							<th><label for="altijara_mr_count"><?php esc_html_e( 'Number of posts', 'altijara' ); ?></label></th>
+							<td>
+								<input type="number" id="altijara_mr_count" min="1" max="15" name="altijara_article[most_read][count]" value="<?php echo esc_attr( (string) (int) ( $mr_cfg['count'] ?? 7 ) ); ?>" style="width:70px">
+							</td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Category source', 'altijara' ); ?></th>
+							<td>
+								<label style="display:block;margin-bottom:6px;">
+									<input type="radio" name="altijara_article[most_read][source]" value="same" class="altijara-sidebar-source" data-target="altijara-mr-cats" <?php checked( ( $mr_cfg['source'] ?? 'same' ), 'same' ); ?>>
+									<?php esc_html_e( 'Same category as the article', 'altijara' ); ?>
+								</label>
+								<label style="display:block;margin-bottom:10px;">
+									<input type="radio" name="altijara_article[most_read][source]" value="selected" class="altijara-sidebar-source" data-target="altijara-mr-cats" <?php checked( ( $mr_cfg['source'] ?? '' ), 'selected' ); ?>>
+									<?php esc_html_e( 'Selected categories', 'altijara' ); ?>
+								</label>
+								<div id="altijara-mr-cats" class="altijara-checkbox-grid" style="display:<?php echo ( 'selected' === ( $mr_cfg['source'] ?? '' ) ) ? 'grid' : 'none'; ?>;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px 16px;">
+									<?php
+									$mr_ids = isset( $mr_cfg['category_ids'] ) && is_array( $mr_cfg['category_ids'] ) ? array_map( 'absint', $mr_cfg['category_ids'] ) : array();
+									if ( ! empty( $article_cats ) && ! is_wp_error( $article_cats ) ) :
+										foreach ( $article_cats as $cat ) :
+											if ( ! $cat instanceof WP_Term ) {
+												continue;
+											}
+											?>
+											<label style="display:flex;align-items:flex-start;gap:8px;">
+												<input type="checkbox" name="altijara_article[most_read][category_ids][]" value="<?php echo esc_attr( (string) (int) $cat->term_id ); ?>" <?php checked( in_array( (int) $cat->term_id, $mr_ids, true ) ); ?>>
+												<span><strong><?php echo esc_html( $cat->name ); ?></strong></span>
+											</label>
+											<?php
+										endforeach;
+									endif;
+									?>
+								</div>
+							</td>
+						</tr>
+					</table>
+				</div>
+				<script>
+				(function(){
+					document.querySelectorAll('.altijara-sidebar-source').forEach(function(radio){
+						radio.addEventListener('change', function(){
+							var id = radio.getAttribute('data-target');
+							var box = id ? document.getElementById(id) : null;
+							if (!box) return;
+							var selected = document.querySelector('input[name="'+radio.name+'"][value="selected"]');
+							box.style.display = (selected && selected.checked) ? 'grid' : 'none';
+						});
+					});
+				})();
+				</script>
 				<?php submit_button( __( 'Save Article', 'altijara' ) ); ?>
 
 			<?php elseif ( 'magazine' === $id ) : ?>
@@ -544,9 +845,16 @@ function altijara_render_settings_panel( $id, array $ctx ) {
 					</div>
 					<div class="altijara-tool-card">
 						<strong><?php esc_html_e( 'Re-run setup', 'altijara' ); ?></strong>
-						<p><?php esc_html_e( 'Creates any missing default menus without duplicating existing ones.', 'altijara' ); ?></p>
-						<button type="submit" name="altijara_rerun_setup" class="button button-secondary" value="1" onclick="return confirm('Re-run theme setup? Existing menus will not be duplicated.');">
-							<?php esc_html_e( 'Re-run setup (safe)', 'altijara' ); ?>
+						<p><?php esc_html_e( 'Ensures utility pages (slug-2 on conflict), seeds page meta, and force-rebuilds primary, top bar, and footer menus.', 'altijara' ); ?></p>
+						<button type="submit" name="altijara_rerun_setup" class="button button-secondary" value="1" onclick="return confirm('Re-run theme setup? Menus will be rebuilt from theme blueprints.');">
+							<?php esc_html_e( 'Run theme setup now', 'altijara' ); ?>
+						</button>
+					</div>
+					<div class="altijara-tool-card">
+						<strong><?php esc_html_e( 'Sync magazine issues', 'altijara' ); ?></strong>
+						<p><?php esc_html_e( 'Creates/updates issue posts from issues_data.json and attaches featured images already in the Media Library.', 'altijara' ); ?></p>
+						<button type="submit" name="altijara_ingest_issues" class="button button-secondary" value="1">
+							<?php esc_html_e( 'Import / sync issues now', 'altijara' ); ?>
 						</button>
 					</div>
 				</div>

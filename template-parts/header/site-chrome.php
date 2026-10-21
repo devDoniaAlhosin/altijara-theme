@@ -15,8 +15,17 @@ $logo_h  = ! empty( $header['logo_hover_url'] ) ? $header['logo_hover_url'] : $l
 $ad_sc   = ! empty( $header['ad_shortcode'] ) ? trim( (string) $header['ad_shortcode'] ) : '';
 $ad_img  = ! empty( $header['ad_image'] ) ? $header['ad_image'] : '';
 $ad_url  = ! empty( $header['ad_url'] ) ? $header['ad_url'] : ( $urls['advertise'] ?? home_url( '/advertise/' ) );
-$login_u = ! empty( $header['login_url'] ) ? $header['login_url'] : ( $urls['login'] ?? home_url( '/login/' ) );
-$sub_u   = ! empty( $header['subscribe_url'] ) ? $header['subscribe_url'] : ( $urls['subscribe'] ?? home_url( '/subscribe/' ) );
+$theme_login = $urls['login'] ?? home_url( '/login/' );
+$theme_sub   = $urls['subscribe'] ?? home_url( '/subscribe/' );
+// Never send front CTA to wp-login.php — always use theme login page.
+$login_u = $theme_login;
+if ( ! empty( $header['login_url'] ) ) {
+	$custom_login = (string) $header['login_url'];
+	if ( $custom_login && false === stripos( $custom_login, 'wp-login.php' ) ) {
+		$login_u = $custom_login;
+	}
+}
+$sub_u = ! empty( $header['subscribe_url'] ) ? $header['subscribe_url'] : $theme_sub;
 $login_t = ! empty( $header['login_text'] ) ? $header['login_text'] : __( 'تسجيل الدخول', 'altijara' );
 $sub_t   = ! empty( $header['subscribe_text'] ) ? $header['subscribe_text'] : __( 'اشترك', 'altijara' );
 $bg      = ! empty( $header['background'] ) ? $header['background'] : '';

@@ -153,8 +153,14 @@ const CATEGORIES_DATA = {
 
 const THEME_URLS = (typeof window !== "undefined" && window.AltijaraTheme && window.AltijaraTheme.urls) || {};
 const THEME_CAT_LINKS = (typeof window !== "undefined" && window.AltijaraTheme && window.AltijaraTheme.categoryLinks) || {};
+const HAS_THEME_CAT_LINKS = THEME_CAT_LINKS && Object.keys(THEME_CAT_LINKS).length > 0;
 const catHref = (key) => {
   if (THEME_CAT_LINKS[key]) return THEME_CAT_LINKS[key];
+  // Never fall back to static category.html when theme localized real archives.
+  if (HAS_THEME_CAT_LINKS) {
+    const base = (THEME_URLS.home || "/").replace(/\/?$/, "/");
+    return base + "category/" + encodeURIComponent(key) + "/";
+  }
   return `category.html?cat=${key}`;
 };
 
@@ -305,12 +311,14 @@ function renderSectionsDrawerLinks() {
   const drawer = document.getElementById("sectionsDrawer");
   // PHP-rendered mobile menu — do not overwrite.
   if (drawer && drawer.getAttribute("data-wp-menu") === "1") return;
+  if (mainList && mainList.getAttribute("data-wp-menu") === "1") return;
   if (mainList && !isWpMenuReady(mainList)) {
     mainList.innerHTML = PRIMARY_NAV.map((item) => {
       const active = item.key === activeKey ? " is-active" : "";
       return `<li><a href="${item.href}" class="${active.trim()}"><span>${item.label}</span><span class="drawer-caret" aria-hidden="true">‹</span></a></li>`;
     }).join("");
   }
+  if (utilList && utilList.getAttribute("data-wp-menu") === "1") return;
   if (utilList && !isWpMenuReady(utilList)) {
     utilList.innerHTML = UTILITY_NAV.map((item) =>
       `<li><a href="${item.href}"><span>${item.label}</span><span class="drawer-caret" aria-hidden="true">‹</span></a></li>`

@@ -20,11 +20,11 @@ if ( ! $lead ) {
 <div class="lead-primary-story" data-section="<?php echo esc_attr( $key ); ?>">
 	<div class="lead-primary-inner">
 		<span class="pill-badge"><?php echo esc_html( $label ); ?></span>
-		<h1 class="lead-title-giant">
+		<h2 class="lead-title-giant">
 			<a href="<?php echo esc_url( get_permalink( $lead ) ); ?>"><?php echo esc_html( get_the_title( $lead ) ); ?></a>
-		</h1>
+		</h2>
 		<p class="lead-excerpt">
-			<span class="lead-excerpt-text"><?php echo esc_html( altijara_trim_at_word( $lead->post_excerpt ?: $lead->post_content, 220 ) ); ?></span>
+			<span class="lead-excerpt-text"><?php echo esc_html( altijara_trim_at_word( $lead->post_excerpt ?: $lead->post_content, 280 ) ); ?></span>
 		</p>
 		<div class="lead-story-footer">
 			<?php get_template_part( 'template-parts/home/section-more', null, array( 'url' => $more ) ); ?>

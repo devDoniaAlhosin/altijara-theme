@@ -25,6 +25,21 @@ function altijara_sanitize_page_meta( $schema, $raw ) {
 	$list_defs = array();
 
 	switch ( $schema ) {
+		case 'home':
+			if ( ! empty( $raw['layout_submitted'] ) && function_exists( 'altijara_sanitize_home2_layout_meta' ) ) {
+				return altijara_sanitize_home2_layout_meta( $raw );
+			}
+			// Legacy content-only sections.
+			if ( function_exists( 'altijara_sanitize_home_meta_sections' ) ) {
+				$sections_raw = isset( $raw['sections'] ) && is_array( $raw['sections'] ) ? $raw['sections'] : array();
+				if ( ! empty( $raw['sections_submitted'] ) ) {
+					$sections_raw['sections_submitted'] = 1;
+				}
+				return array(
+					'sections' => altijara_sanitize_home_meta_sections( $sections_raw ),
+				);
+			}
+			return $defaults;
 		case 'about':
 			$text_keys = array( 'highlight_kicker', 'highlight_title', 'offers_title', 'hq_kicker', 'hq_title', 'hq_phone', 'hq_phone_label', 'hq_po_label', 'hq_po_value', 'hq_contact_label', 'hq_advertise_label' );
 			$area_keys = array( 'lead', 'highlight_intro', 'mission', 'dist_intro', 'hq_address' );

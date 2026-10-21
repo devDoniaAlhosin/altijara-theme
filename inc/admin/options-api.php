@@ -29,7 +29,7 @@ function altijara_get_options() {
 	$merged = array_replace_recursive( $defaults, $saved );
 
 	// Guarantee critical admin branches are arrays (prevents fatal on theme options).
-	foreach ( array( 'general', 'design', 'header', 'footer', 'social', 'article', 'magazine', 'advertising', 'integrations', 'advanced', 'category_map', 'sections', 'sections_order', 'archive_layouts' ) as $branch ) {
+	foreach ( array( 'general', 'design', 'header', 'footer', 'social', 'auth', 'article', 'magazine', 'advertising', 'integrations', 'advanced', 'category_map', 'sections', 'sections_order', 'archive_layouts' ) as $branch ) {
 		if ( ! isset( $merged[ $branch ] ) || ! is_array( $merged[ $branch ] ) ) {
 			$merged[ $branch ] = isset( $defaults[ $branch ] ) && is_array( $defaults[ $branch ] ) ? $defaults[ $branch ] : array();
 		}

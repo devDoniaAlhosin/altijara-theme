@@ -55,7 +55,18 @@ function altijara_normalize_section_config( $id, $row, $def = array() ) {
 		$merged['view_period'] = 'all';
 	}
 	if ( empty( $merged['source'] ) ) {
-		$merged['source'] = ( 'magazine_slider' === $merged['widget'] ) ? 'issues' : 'posts';
+		// Hero cover slider is personality posts (issue-cover-personality), not issue CPT.
+		$merged['source'] = ( 'hero_magazine' === $id ) ? 'posts' : ( ( 'magazine_slider' === $merged['widget'] ) ? 'issues' : 'posts' );
+	}
+	// Homepage middle hero defaults to issue-cover-personality; Home 2 / options may override category.
+	if ( 'hero_magazine' === $id ) {
+		$merged['source'] = 'posts';
+		if ( empty( $merged['category'] ) ) {
+			$merged['category'] = 'personality';
+		}
+		if ( empty( $merged['count'] ) || (int) $merged['count'] < 1 ) {
+			$merged['count'] = 6;
+		}
 	}
 
 	$hero_ids = altijara_hero_section_ids();
@@ -81,6 +92,19 @@ function altijara_normalize_section_config( $id, $row, $def = array() ) {
  * @return array<string, array<string, mixed>>
  */
 function altijara_get_sections() {
+	// Runtime override from layout renderer (category / issues / custom packs).
+	if ( ! empty( $GLOBALS['altijara_layout_sections_override'] ) && is_array( $GLOBALS['altijara_layout_sections_override'] ) ) {
+		return $GLOBALS['altijara_layout_sections_override'];
+	}
+
+	// Home 2 front page — sections come from the page metabox (front only; admin builder stays on theme options).
+	if ( ! is_admin() && function_exists( 'altijara_front_uses_home2' ) && altijara_front_uses_home2() && function_exists( 'altijara_sections_from_home2_page' ) ) {
+		$from_home2 = altijara_sections_from_home2_page();
+		if ( is_array( $from_home2 ) && ! empty( $from_home2 ) ) {
+			return $from_home2;
+		}
+	}
+
 	$saved   = altijara_get_option( 'sections', array() );
 	$defaults = altijara_default_sections();
 	$out     = array();

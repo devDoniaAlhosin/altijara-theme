@@ -211,6 +211,11 @@ function altijara_resolve_section_category_id( $section, $section_key ) {
 		}
 		return altijara_resolve_category_id( (string) $section['category'] );
 	}
+	// Category archive layout context: inherit queried term when row has no category.
+	$ctx = function_exists( 'altijara_get_layout_context' ) ? altijara_get_layout_context() : array();
+	if ( ! empty( $ctx['category'] ) ) {
+		return absint( $ctx['category'] );
+	}
 	return altijara_resolve_category_id( $section_key );
 }
 

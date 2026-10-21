@@ -10,28 +10,43 @@ get_header();
 if ( have_posts() ) :
 	while ( have_posts() ) :
 		the_post();
-		$post_id   = get_the_ID();
-		$related   = altijara_get_related_posts( $post_id, 7 );
-		$latest    = array_slice( $related, 0, 5 );
-		$read_also = array_slice( $related, 5, 2 );
-		if ( count( $read_also ) < 2 ) {
-			$extra     = altijara_query_posts(
+		$post_id          = get_the_ID();
+		$article_opts     = function_exists( 'altijara_get_article_settings' ) ? altijara_get_article_settings() : array();
+		$related_initial  = isset( $article_opts['related_count'] ) ? max( 1, min( 12, (int) $article_opts['related_count'] ) ) : 2;
+		$related_per_load = isset( $article_opts['related_per_load'] ) ? max( 1, min( 12, (int) $article_opts['related_per_load'] ) ) : 2;
+		$show_related     = ! isset( $article_opts['show_related'] ) || ! empty( $article_opts['show_related'] );
+		$related_pool     = min( 24, $related_initial + ( $related_per_load * 4 ) );
+
+		$latest    = function_exists( 'altijara_get_article_sidebar_posts' )
+			? altijara_get_article_sidebar_posts( $post_id, 'latest' )
+			: altijara_get_related_posts( $post_id, 5 );
+		$most_read = function_exists( 'altijara_get_article_sidebar_posts' )
+			? altijara_get_article_sidebar_posts( $post_id, 'most_read' )
+			: altijara_query_posts(
 				array(
-					'posts_per_page' => 2,
-					'post__not_in'   => array_merge( array( $post_id ), wp_list_pluck( $related, 'ID' ) ),
+					'posts_per_page' => 7,
+					'post__not_in'   => array( $post_id ),
 				),
-				'read_also'
+				'most_read'
 			);
-			$read_also = array_slice( array_merge( $read_also, $extra ), 0, 2 );
+
+		$exclude_ids = array_merge( array( $post_id ), wp_list_pluck( $latest, 'ID' ), wp_list_pluck( $most_read, 'ID' ) );
+		$read_also   = array();
+		if ( $show_related ) {
+			$read_also = altijara_get_related_posts( $post_id, $related_pool );
+			if ( count( $read_also ) < $related_pool ) {
+				$extra     = altijara_query_posts(
+					array(
+						'posts_per_page' => $related_pool,
+						'post__not_in'   => array_merge( $exclude_ids, wp_list_pluck( $read_also, 'ID' ) ),
+					),
+					'read_also'
+				);
+				$read_also = array_slice( array_merge( $read_also, $extra ), 0, $related_pool );
+			}
 		}
-		$most_read = altijara_query_posts(
-			array(
-				'posts_per_page' => 7,
-				'post__not_in'   => array( $post_id ),
-			),
-			'most_read'
-		);
-		$kicker = altijara_get_primary_category_name( $post_id );
+		$related_has_more = count( $read_also ) > $related_initial;
+		$kicker           = altijara_get_primary_category_name( $post_id );
 		?>
 <main class="article-page-wrap">
 	<div class="article-container">
@@ -52,11 +67,11 @@ if ( have_posts() ) :
 				</div>
 
 				<div class="article-meta-toolbar">
-					<div class="article-share-actions">
-						<button type="button" class="btn-share-icon" onclick="copyArticleLink()" title="نسخ الرابط">
-							<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-						</button>
-					</div>
+					<?php
+					if ( function_exists( 'altijara_render_article_share_actions' ) ) {
+						altijara_render_article_share_actions( $post_id );
+					}
+					?>
 					<div class="article-meta-info">
 						<?php if ( $kicker ) : ?><span class="article-kicker"><?php echo esc_html( $kicker ); ?></span><?php endif; ?>
 						<span class="article-date"><?php echo esc_html( altijara_format_date_ar( $post_id ) ); ?></span>
@@ -85,6 +100,21 @@ if ( have_posts() ) :
 					</div>
 				</div>
 
+				<?php
+				if ( function_exists( 'altijara_render_sidebar_ad' ) ) {
+					altijara_render_sidebar_ad();
+				}
+				get_template_part(
+					'template-parts/widgets/magazine-issues',
+					'slider',
+					array(
+						'items' => function_exists( 'altijara_get_magazine_slider_items' )
+							? altijara_get_magazine_slider_items( 8 )
+							: array(),
+					)
+				);
+				?>
+
 				<div class="cat-most-read-widget">
 					<div class="cat-section-bar cat-mr-bar">
 						<h3 class="cat-section-title">الأكثر قراءة</h3>
@@ -105,13 +135,14 @@ if ( have_posts() ) :
 			</aside>
 		</div>
 
-		<section class="bottom-related-section">
+		<?php if ( $show_related && ! empty( $read_also ) ) : ?>
+		<section class="bottom-related-section" data-related-initial="<?php echo esc_attr( (string) $related_initial ); ?>" data-related-per-load="<?php echo esc_attr( (string) $related_per_load ); ?>">
 			<div class="cat-section-bar cat-mr-bar bottom-section-header">
 				<h3 class="cat-section-title">اقرأ ايضاً</h3>
 			</div>
 			<div class="bottom-cards-list" id="bottomCardsList">
-				<?php foreach ( $read_also as $item ) : ?>
-					<article class="bottom-news-card">
+				<?php foreach ( $read_also as $idx => $item ) : ?>
+					<article class="bottom-news-card<?php echo $idx >= $related_initial ? ' is-related-more' : ''; ?>" <?php echo $idx >= $related_initial ? 'hidden' : ''; ?>>
 						<div class="bottom-card-img-wrap">
 							<img src="<?php echo esc_url( altijara_get_thumb_url( $item->ID ) ); ?>" alt="<?php echo esc_attr( get_the_title( $item ) ); ?>" class="bottom-card-img" loading="lazy">
 						</div>
@@ -126,7 +157,16 @@ if ( have_posts() ) :
 					</article>
 				<?php endforeach; ?>
 			</div>
+			<?php if ( $related_has_more ) : ?>
+			<div class="bottom-section-footer" id="relatedLoadMoreWrap">
+				<button type="button" class="btn-cat-load-more" id="relatedLoadMoreBtn">
+					<span><?php esc_html_e( 'تحميل المزيد', 'altijara' ); ?></span>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+				</button>
+			</div>
+			<?php endif; ?>
 		</section>
+		<?php endif; ?>
 	</div>
 </main>
 

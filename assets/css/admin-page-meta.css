@@ -273,3 +273,63 @@ body.altijara-utility-page-edit .editor-styles-wrapper {
   font-size: 13px;
   line-height: 1.45;
 }
+
+/* Home 2 — section cards */
+.altijara-home-section-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 14px 16px 16px;
+  margin-bottom: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.altijara-home-section-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.altijara-home-section-card__title {
+  display: block;
+  font-size: 14px;
+  color: #1a222d;
+}
+
+.altijara-home-section-card__id {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6e7787;
+  background: #f3f4f5;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.altijara-home-section-card__vis {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.altijara-home-source-panel {
+  margin-top: 10px;
+  padding-top: 4px;
+}
+
+.altijara-home-section-card .altijara-post-picker {
+  margin-top: 4px;
+}
+
+.altijara-home-section-card .altijara-picker-search {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 6px;
+}

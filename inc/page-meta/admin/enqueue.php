@@ -33,10 +33,41 @@ function altijara_admin_enqueue_page_meta_assets() {
 		array( 'dashicons' ),
 		$css_ver
 	);
+
+	// Post picker + Home 2 section controls (same AJAX as theme Homepage tab).
+	$picker_js  = ALTIJARA_THEME_DIR . '/assets/js/admin/section-manager.js';
+	$picker_css = ALTIJARA_THEME_DIR . '/assets/css/admin-sections.css';
+	wp_enqueue_style(
+		'altijara-admin-sections',
+		altijara_asset( 'assets/css/admin-sections.css' ),
+		array( 'altijara-page-meta' ),
+		file_exists( $picker_css ) ? (string) filemtime( $picker_css ) : ALTIJARA_THEME_VERSION
+	);
+	wp_enqueue_script(
+		'altijara-admin-sections',
+		altijara_asset( 'assets/js/admin/section-manager.js' ),
+		array(),
+		file_exists( $picker_js ) ? (string) filemtime( $picker_js ) : ALTIJARA_THEME_VERSION,
+		true
+	);
+	wp_localize_script(
+		'altijara-admin-sections',
+		'AltijaraAdmin',
+		array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'altijara_admin_search' ),
+			'i18n'    => array(
+				'searchPlaceholder' => __( 'Search by title or ID…', 'altijara' ),
+				'noResults'         => __( 'No results', 'altijara' ),
+				'remove'            => __( 'Remove', 'altijara' ),
+			),
+		)
+	);
+
 	wp_enqueue_script(
 		'altijara-page-meta',
 		altijara_asset( 'assets/js/admin/page-meta.js' ),
-		array( 'jquery' ),
+		array( 'jquery', 'altijara-admin-sections' ),
 		$js_ver,
 		true
 	);

@@ -137,8 +137,21 @@ function altijara_default_options() {
 			),
 		),
 		'article'      => array(
-			'show_related'  => true,
-			'related_count' => 2,
+			'show_related'     => true,
+			'related_count'    => 2,
+			'related_per_load' => 2,
+			'share_platforms'  => array( 'whatsapp', 'x', 'linkedin', 'facebook', 'telegram', 'copy' ),
+			'share_extra'      => array(),
+			'latest'           => array(
+				'count'        => 5,
+				'source'       => 'same',
+				'category_ids' => array(),
+			),
+			'most_read'    => array(
+				'count'        => 7,
+				'source'       => 'same',
+				'category_ids' => array(),
+			),
 		),
 		'magazine'     => array(
 			'flip_base' => 'https://online.fliphtml5.com/',
@@ -148,6 +161,14 @@ function altijara_default_options() {
 			'sidebar_shortcode' => '',
 			'sidebar_image'     => 'https://altijaramagazine.com/wp-content/uploads/angwp/items/31121/%D8%AE%D8%AF%D9%85%D8%A7%D8%AA%20%D9%85%D9%8F%D8%AA%D9%85%D9%8A%D8%B2%D8%A9_%20300x600%20copy.png',
 			'sidebar_url'       => '',
+		),
+		'auth'         => array(
+			'google_enabled'       => false,
+			'google_client_id'     => '',
+			'google_client_secret' => '',
+			'facebook_enabled'     => false,
+			'facebook_app_id'      => '',
+			'facebook_app_secret'  => '',
 		),
 		'integrations' => array(
 			'rest_prefer_local' => true,
@@ -174,8 +195,16 @@ function altijara_default_options() {
 		),
 		'sections'        => array(),
 		// sections_order omitted from defaults — only stored after Homepage save.
-		'archive_layouts' => array(),
+		'archive_layouts'      => array(),
+		'archive_magazine_ids' => array(),
+		'archive_counts'       => array(
+			'sidebar_count' => 3,
+			'featured_rows' => 2,
+			'news_size'     => 10,
+		),
+		'issues_archive_layout' => array(),
 		// archive_full_hero intentionally omitted until saved (legacy keys apply until then).
+		'utility_page_ids'     => array(),
 	);
 }
 

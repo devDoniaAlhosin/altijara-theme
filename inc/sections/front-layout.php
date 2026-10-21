@@ -27,9 +27,19 @@ function altijara_render_home_body_sections() {
 			if ( ! altijara_section_is_visible( $id ) && ! altijara_section_is_visible( $pair ) ) {
 				continue;
 			}
+			// Prefer canonical RTL order: health (right) | tourism (left).
+			$left  = $id;
+			$right = $pair;
+			if ( 'tourism' === $id && 'health' === $pair ) {
+				$left  = 'health';
+				$right = 'tourism';
+			} elseif ( 'energy' === $id && 'business' === $pair ) {
+				$left  = 'business';
+				$right = 'energy';
+			}
 			echo '<section class="home-split-sectors-section"><div class="home-split-grid">';
-			altijara_render_home_section( $id );
-			altijara_render_home_section( $pair );
+			altijara_render_home_section( $left );
+			altijara_render_home_section( $right );
 			echo '</div></section>';
 			continue;
 		}
