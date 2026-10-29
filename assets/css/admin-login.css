@@ -1,0 +1,114 @@
+/* Altijara — WordPress login branding */
+
+body.login {
+	background: var(--altijara-login-bg, #fff1e5);
+	color: #262a33;
+}
+
+body.login #login {
+	width: 360px;
+	padding: 6vh 0 8vh;
+}
+
+.login h1 {
+	margin-bottom: 4px;
+}
+
+.login h1 a {
+	width: 260px;
+	height: 96px;
+	margin: 0 auto 28px;
+	background-size: contain;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-image: none;
+}
+
+.login #login_error,
+.login .message,
+.login .success {
+	border-left-color: #1897b8;
+	border-radius: 8px;
+	box-shadow: 0 2px 10px rgba(38, 42, 51, 0.06);
+}
+
+.login form {
+	margin-top: 0;
+	padding: 28px 28px 24px;
+	border: 1px solid rgba(38, 42, 51, 0.08);
+	border-radius: 12px;
+	background: #fff;
+	box-shadow: 0 12px 36px rgba(38, 42, 51, 0.08);
+}
+
+.login form label,
+.login .forgetmenot label {
+	color: #262a33;
+}
+
+.login form .input,
+.login input[type="text"],
+.login input[type="password"] {
+	border-color: #d7dde6;
+	border-radius: 8px;
+	padding: 8px 12px;
+	font-size: 15px;
+	background: #fff;
+}
+
+.login form .input:focus,
+.login input[type="text"]:focus,
+.login input[type="password"]:focus {
+	border-color: #1897b8;
+	box-shadow: 0 0 0 1px #1897b8;
+}
+
+.wp-core-ui .button-primary {
+	background: #1897b8;
+	border-color: #12748e;
+	border-radius: 8px;
+	box-shadow: none;
+	text-shadow: none;
+	padding: 0 20px;
+	min-height: 38px;
+	font-weight: 600;
+}
+
+.wp-core-ui .button-primary:hover,
+.wp-core-ui .button-primary:focus {
+	background: #12748e;
+	border-color: #0f6278;
+	box-shadow: 0 0 0 1px #12748e;
+}
+
+.login #nav,
+.login #backtoblog {
+	padding: 0 4px;
+}
+
+.login #nav a,
+.login #backtoblog a {
+	color: #3b424e;
+}
+
+.login #nav a:hover,
+.login #backtoblog a:hover {
+	color: #1897b8;
+}
+
+.login .privacy-policy-page-link a {
+	color: #6e7787;
+}
+
+.login .privacy-policy-page-link a:hover {
+	color: #1897b8;
+}
+
+.login .language-switcher {
+	margin-top: 18px;
+}
+
+.login .language-switcher select {
+	border-radius: 8px;
+	border-color: #d7dde6;
+}

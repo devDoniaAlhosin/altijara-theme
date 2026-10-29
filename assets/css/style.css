@@ -1,0 +1,10 @@
+/*
+ * DEPRECATED BUNDLE — front-end styles were split for maintainability.
+ * Enqueued modules:
+ *   - assets/css/base.css          (global)
+ *   - assets/css/home.css          (front page)
+ *   - assets/css/category.css      (category / search / saved)
+ *   - assets/css/static-pages.css  (about / contact / advertise / auth / subscribe)
+ *   - assets/css/fonts.css, article-page.css, woocommerce-account.css
+ * This file is kept so old paths do not 404; it is not enqueued by the theme.
+ */

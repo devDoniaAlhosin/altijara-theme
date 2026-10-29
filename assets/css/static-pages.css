@@ -1,0 +1,2413 @@
+/* Static utility pages (about / contact / advertise / auth / subscribe) */
+
+/* ==========================================================================
+   Static utility pages (من نحن / اتصل بنا / أعلن معنا / دخول / اشترك)
+   ========================================================================== */
+.static-page {
+  padding: 40px 0 64px;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.static-page--wide {
+  max-width: 980px;
+}
+
+.static-page--narrow {
+  max-width: 440px;
+}
+
+.static-kicker {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #262A33;
+  padding: 4px 12px;
+  border-radius: 3px;
+  margin-bottom: 14px;
+}
+
+.static-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink-black);
+  margin: 0 0 12px;
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+}
+
+.static-lead {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--ink-secondary);
+  margin: 0 0 28px;
+}
+
+.static-body {
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--ink-secondary);
+}
+
+.static-body p {
+  margin: 0 0 16px;
+}
+
+.static-body h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink-black);
+  margin: 28px 0 10px;
+}
+
+.static-divider {
+  border: none;
+  border-top: 1px dashed var(--border-dashed);
+  margin: 28px 0;
+}
+
+.static-meta-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.static-meta-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14.5px;
+  color: var(--ink-secondary);
+  line-height: 1.55;
+}
+
+.static-meta-list strong {
+  color: var(--ink-black);
+  font-weight: 700;
+  min-width: 88px;
+}
+
+.static-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.static-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.static-field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-black);
+}
+
+.static-field input,
+.static-field textarea,
+.static-field select {
+  width: 100%;
+  font-family: var(--font-main);
+  font-size: 14px;
+  color: var(--ink-black);
+  background: var(--bg-salmon);
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 4px;
+  padding: 11px 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.static-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.static-field input:focus,
+.static-field textarea:focus,
+.static-field select:focus {
+  border-color: var(--color-brand, #1897B8);
+  box-shadow: 0 0 0 3px rgba(24, 151, 184, 0.12);
+}
+
+.static-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.static-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-main);
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 12px 22px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.static-btn-primary {
+  background: var(--color-brand, #1897B8);
+  color: #ffffff;
+}
+
+.static-btn-primary:hover {
+  background: #12748e;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.static-btn-dark {
+  background: #262A33;
+  color: #ffffff;
+}
+
+.static-btn-dark:hover {
+  background: #1a1d24;
+  color: #ffffff;
+}
+
+.static-btn-ghost {
+  background: transparent;
+  color: #262A33;
+  border-color: #262A33;
+}
+
+.static-btn-ghost:hover {
+  background: #262A33;
+  color: #ffffff;
+}
+
+.static-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 2px;
+}
+
+.static-form-note {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.static-form-note a {
+  color: var(--color-brand, #1897B8);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.static-form-note a:hover {
+  text-decoration: underline;
+}
+
+.static-auth-panel {
+  background: #FFF7EF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 28px 26px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.static-auth-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.static-auth-links a {
+  color: var(--color-brand, #1897B8);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.static-auth-links a:hover {
+  text-decoration: underline;
+}
+
+.ad-formats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.ad-format-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.ad-format-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.ad-format-label h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink-black);
+}
+
+.ad-format-size {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.ad-format-preview {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px dashed rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.ad-format-preview--leaderboard {
+  max-width: 728px;
+  aspect-ratio: 728 / 90;
+  min-height: 90px;
+}
+
+.ad-format-preview--medium {
+  max-width: 300px;
+  aspect-ratio: 300 / 250;
+  min-height: 180px;
+}
+
+.ad-format-desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--ink-secondary);
+}
+
+.static-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 28px 0 8px;
+}
+
+.static-fact {
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: default;
+  text-align: start;
+}
+
+.static-fact:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+  border-color: rgba(24, 151, 184, 0.35);
+}
+
+.static-fact strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-brand, #1897B8);
+  line-height: 1.35;
+  margin-bottom: 8px;
+  text-align: start;
+}
+
+.static-fact strong::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 2px;
+  margin-top: 8px;
+  margin-inline-start: 0;
+  margin-inline-end: auto;
+  background: var(--color-brand, #1897B8);
+  border-radius: 2px;
+}
+
+.static-fact span {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  line-height: 1.45;
+  text-align: start;
+}
+
+@media (max-width: 768px) {
+  .static-page {
+    padding: 28px 0 48px;
+  }
+  .static-title {
+    font-size: 24px;
+  }
+  .static-form-row,
+  .static-facts {
+    grid-template-columns: 1fr;
+  }
+  .ad-format-preview--leaderboard {
+    max-width: 100%;
+  }
+}
+
+
+/* ---- Enhanced utility page experience ---- */
+.static-shell {
+  padding-top: 8px;
+}
+
+.static-page-header {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px dashed var(--border-dashed);
+}
+
+.static-page-header .static-lead {
+  margin-bottom: 0;
+  max-width: 62ch;
+}
+
+.static-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.static-split > * {
+  min-width: 0;
+}
+
+.static-split.static-contact-layout > .static-panel,
+.static-split.static-contact-layout > form.static-form,
+.static-split.static-contact-layout > .static-form--shortcode,
+.static-split.static-contact-layout > .contact-shortcode-panel {
+  grid-column: 1;
+  grid-row: 1;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.static-split.static-contact-layout > .ad-agent-card--sidebar {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.static-split--equal > * {
+  height: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.static-panel {
+  background: #FFF7EF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 22px 22px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.static-panel h2,
+.static-panel h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink-black);
+}
+
+.static-panel p {
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink-secondary);
+}
+
+.static-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.ad-agent-card {
+  background: linear-gradient(165deg, #2c313c 0%, #262A33 55%, #1f232b 100%);
+  color: #f8fafc;
+  border-radius: 10px;
+  padding: 26px 24px 22px;
+  margin: 8px 0 28px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+}
+
+.ad-agent-card--sidebar {
+  margin: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ad-agent-card .static-kicker {
+  background: var(--color-brand, #1897B8);
+  margin-bottom: 14px;
+  align-self: flex-start;
+}
+
+.ad-agent-card h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.45;
+}
+
+.ad-agent-card .ad-agent-intro {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+  max-width: none;
+}
+
+.ad-agent-person {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  border-inline-start: 3px solid var(--color-brand, #1897B8);
+}
+
+.ad-agent-person strong {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.4;
+}
+
+.ad-agent-person span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.ad-agent-contacts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.ad-agent-contacts li {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.ad-agent-link {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  height: auto;
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  text-decoration: none;
+  text-align: start;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.ad-agent-link:hover {
+  background: rgba(24, 151, 184, 0.16);
+  border-color: rgba(24, 151, 184, 0.4);
+  transform: translateY(-1px);
+}
+
+.ad-agent-icon {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(24, 151, 184, 0.22);
+  color: #7dd3e8;
+}
+
+.ad-agent-link-text {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+  text-align: start;
+}
+
+.ad-agent-contacts .label {
+  display: block;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.2px;
+  text-align: start;
+}
+
+.ad-agent-link-text strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  display: block;
+  line-height: 1.35;
+  text-align: start;
+}
+
+/* Keep phone/email digit order LTR, but pin the block to the page start edge. */
+.ad-agent-link-text strong[dir="ltr"] {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: match-parent;
+}
+
+html[dir="rtl"] .ad-agent-link-text strong[dir="ltr"] {
+  text-align: right;
+}
+
+html:not([dir="rtl"]) .ad-agent-link-text strong[dir="ltr"] {
+  text-align: left;
+}
+
+.ad-agent-contacts a {
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: none;
+}
+
+.ad-agent-contacts a:hover {
+  color: #ffffff;
+}
+
+@media (min-width: 901px) {
+  /* Wide layout (advertise page): keep three columns when card is full-width */
+  .ad-agent-card:not(.ad-agent-card--sidebar) .ad-agent-contacts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ad-agent-card:not(.ad-agent-card--sidebar) .ad-agent-link {
+    flex-direction: column;
+    align-items: start;
+    gap: 10px;
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .ad-agent-card:not(.ad-agent-card--sidebar) .ad-agent-link-text {
+    width: 100%;
+    text-align: start;
+  }
+
+  .ad-agent-card:not(.ad-agent-card--sidebar) .ad-agent-link-text strong {
+    font-size: 12.5px;
+    text-align: start;
+  }
+
+  .ad-agent-card:not(.ad-agent-card--sidebar) .ad-agent-link-text strong[dir="ltr"] {
+    text-align: match-parent;
+  }
+
+  html[dir="rtl"] .ad-agent-card:not(.ad-agent-card--sidebar) .ad-agent-link-text strong[dir="ltr"] {
+    text-align: right;
+  }
+
+  html:not([dir="rtl"]) .ad-agent-card:not(.ad-agent-card--sidebar) .ad-agent-link-text strong[dir="ltr"] {
+    text-align: left;
+  }
+}
+
+@media (max-width: 900px) {
+  .ad-agent-contacts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ad-formats-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.ad-format-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ad-format-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.ad-format-desc {
+  margin-top: auto;
+}
+
+.static-contact-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 24px;
+}
+
+.static-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.static-chip:hover {
+  border-color: var(--color-brand, #1897B8);
+  color: var(--color-brand, #1897B8);
+}
+
+.static-chip strong {
+  color: var(--ink-black);
+  font-weight: 800;
+}
+
+.static-success {
+  display: none;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: rgba(24, 151, 184, 0.1);
+  border: 1px solid rgba(24, 151, 184, 0.28);
+  color: #0f5f73;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.static-success.is-visible {
+  display: block;
+}
+
+.subscribe-shell {
+  padding-bottom: 40px;
+}
+
+.subscribe-shell .static-page--subscribe {
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+.subscribe-shell .static-page-header {
+  text-align: center;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px dashed var(--border-dashed, rgba(0, 0, 0, 0.12));
+}
+
+.subscribe-shell .static-page-header .static-title {
+  margin-bottom: 8px;
+}
+
+.subscribe-shell .static-page-header .static-lead {
+  margin-inline: auto;
+  max-width: 36em;
+  color: var(--ink-muted, #6e7787);
+}
+
+.subscribe-form-panel {
+  margin-top: 0;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 28px 24px 22px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.subscribe-plans {
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.subscribe-plans-legend {
+  padding: 0;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-black, #262A33);
+}
+
+.subscribe-shell .static-plan-cards {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.subscribe-shell .static-plan-option .plan-body {
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.subscribe-shell .static-plan-option:hover .plan-body {
+  border-color: rgba(38, 42, 51, 0.35);
+}
+
+.subscribe-shell .static-plan-option.is-selected .plan-body,
+.subscribe-shell .static-plan-option input:checked + .plan-body {
+  background: #F2DFCE;
+  border-color: #262A33;
+  box-shadow: none;
+}
+
+.subscribe-shell .plan-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: #262A33;
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+
+.subscribe-shell .plan-text {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.subscribe-shell .auth-social-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.static-plan-cards {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.static-plan-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.static-plan-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.static-plan-option .plan-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  background: var(--bg-card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.static-plan-option input:checked + .plan-body {
+  border-color: var(--color-brand, #1897B8);
+  box-shadow: 0 0 0 3px rgba(24, 151, 184, 0.12);
+}
+
+.static-plan-option .plan-body strong {
+  font-size: 14px;
+  color: var(--ink-black);
+}
+
+.static-plan-option .plan-body span {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.static-auth-panel {
+  padding: 30px 28px;
+}
+
+.static-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.static-check input {
+  margin-top: 2px;
+}
+
+.top-nav-links a.is-current {
+  color: #ffffff;
+  opacity: 1;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 900px) {
+  .static-split,
+  .ad-formats-grid,
+  .static-split.static-contact-layout {
+    grid-template-columns: 1fr;
+  }
+  .static-split.static-contact-layout > .static-panel,
+  .static-split.static-contact-layout > form.static-form,
+  .static-split.static-contact-layout > .static-form--shortcode,
+  .static-split.static-contact-layout > .contact-shortcode-panel,
+  .static-split.static-contact-layout > .ad-agent-card--sidebar {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+/* ---- Advertise spec cards (Arabic, brand colors) ---- */
+.ad-spec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin: 8px 0;
+}
+
+.ad-spec-card {
+  background: var(--bg-card, #F2DFCE);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ad-spec-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.ad-spec-head {
+  position: relative;
+  padding: 18px 20px 22px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.ad-spec-card--leader .ad-spec-head {
+  background: var(--color-brand, #1897B8);
+}
+
+.ad-spec-card--medium .ad-spec-head {
+  background: var(--ink-black, #262A33);
+}
+
+.ad-spec-head::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+}
+
+.ad-spec-card--leader .ad-spec-head::after {
+  border-top-color: var(--color-brand, #1897B8);
+}
+
+.ad-spec-card--medium .ad-spec-head::after {
+  border-top-color: var(--ink-black, #262A33);
+}
+
+.ad-spec-head h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.ad-spec-head p {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  opacity: 0.85;
+  letter-spacing: 0.2px;
+}
+
+.ad-spec-body {
+  padding: 24px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  background: var(--bg-card, #F2DFCE);
+}
+
+.ad-spec-mock {
+  display: flex;
+  justify-content: center;
+}
+
+.ad-spec-mock-frame {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 4 / 3;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 10px;
+  background: var(--bg-salmon, #FFF1E5);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.ad-spec-mock-frame--side {
+  flex-direction: row-reverse;
+  align-items: flex-start;
+}
+
+.ad-spec-mock-slot {
+  display: block;
+  background: var(--color-brand, #1897B8);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.ad-spec-mock--leader .ad-spec-mock-slot {
+  width: 100%;
+  height: 18px;
+}
+
+.ad-spec-mock--medium .ad-spec-mock-slot {
+  width: 38%;
+  aspect-ratio: 1 / 1.05;
+  min-height: 70px;
+}
+
+.ad-spec-mock-lines {
+  display: block;
+  flex: 1;
+  background:
+    linear-gradient(rgba(38, 42, 51, 0.12), rgba(38, 42, 51, 0.12)) 0 12% / 100% 6px no-repeat,
+    linear-gradient(rgba(38, 42, 51, 0.12), rgba(38, 42, 51, 0.12)) 0 32% / 88% 6px no-repeat,
+    linear-gradient(rgba(38, 42, 51, 0.12), rgba(38, 42, 51, 0.12)) 0 52% / 94% 6px no-repeat,
+    linear-gradient(rgba(38, 42, 51, 0.12), rgba(38, 42, 51, 0.12)) 0 72% / 70% 6px no-repeat,
+    linear-gradient(rgba(38, 42, 51, 0.12), rgba(38, 42, 51, 0.12)) 0 92% / 80% 6px no-repeat;
+}
+
+.ad-spec-size {
+  margin: 0;
+  text-align: center;
+  color: var(--color-brand, #1897B8);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ad-spec-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ad-spec-points li {
+  position: relative;
+  padding: 8px 12px;
+  padding-inline-start: 28px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  background: var(--bg-salmon, #FFF1E5);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ad-spec-points li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-brand, #1897B8);
+}
+
+.ad-spec-price {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1.5px solid var(--color-brand, #1897B8);
+  text-align: center;
+  color: var(--ink-black, #262A33);
+}
+
+.ad-spec-price-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+.ad-spec-card--leader .ad-spec-price,
+.ad-spec-card--leader .ad-spec-price-unit {
+  color: var(--color-brand, #1897B8);
+}
+
+.ad-spec-card--leader .ad-spec-price-label {
+  color: var(--color-brand, #1897B8);
+}
+
+.ad-spec-card--medium .ad-spec-price,
+.ad-spec-card--medium .ad-spec-price-unit {
+  color: var(--ink-black, #262A33);
+}
+
+.ad-spec-price strong {
+  display: block;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.ad-spec-price-unit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.riyal-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.12em;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+.ad-spec-price-unit .riyal-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.ad-why-price .riyal-icon {
+  width: 13px;
+  height: 13px;
+}
+
+@media (max-width: 900px) {
+  .ad-spec-grid {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin-inline: auto;
+  }
+}
+
+/* ---- About page ---- */
+.about-tagline {
+  margin: 6px 0 10px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-brand, #1897B8);
+  line-height: 1.45;
+}
+
+.static-page-header .about-lead-oneline,
+.static-page-header .static-lead-oneline {
+  white-space: nowrap;
+  max-width: none;
+}
+
+@media (max-width: 900px) {
+  .static-page-header .about-lead-oneline,
+  .static-page-header .static-lead-oneline {
+    white-space: normal;
+  }
+}
+
+.about-highlight .ad-agent-link-text {
+  text-align: start;
+}
+
+.about-highlight .ad-agent-link-text strong {
+  direction: inherit;
+  unicode-bidi: normal;
+  font-size: 20px;
+  font-weight: 800;
+  text-align: start;
+}
+
+.about-highlight .ad-agent-contacts .label {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: normal;
+  text-align: start;
+}
+
+.about-intro {
+  margin: 22px 0 8px;
+  max-width: 820px;
+}
+
+.about-section-title {
+  margin: 28px 0 14px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.about-offer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.about-offer-list li {
+  background: var(--bg-card);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: default;
+}
+
+.about-offer-list li:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.09);
+  border-color: rgba(24, 151, 184, 0.35);
+}
+
+.about-offer-num {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #f89a2a;
+}
+
+.about-offer-list strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.about-offer-list p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.about-mission {
+  margin: 22px 0 0;
+  max-width: 820px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #334155;
+}
+
+.about-bottom {
+  margin-top: 32px;
+  align-items: stretch;
+}
+
+.about-distribution {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.about-distribution p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.about-dist-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about-dist-list li {
+  position: relative;
+  padding: 10px 14px 10px 14px;
+  padding-inline-start: 28px;
+  background: var(--bg-card);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.about-dist-list li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-brand, #1897B8);
+}
+
+.about-hq-card {
+  background: linear-gradient(160deg, #0f2a3d 0%, #1a4a5c 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 22px 20px;
+  box-shadow: 0 10px 28px rgba(15, 42, 61, 0.25);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.about-hq-actions {
+  margin-top: auto;
+  padding-top: 16px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.about-hq-actions .static-btn {
+  flex: 1;
+  text-align: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.about-hq-card .static-kicker {
+  color: #7dd3e8;
+  align-self: flex-start;
+  width: auto;
+  max-width: max-content;
+}
+
+.about-hq-card h3 {
+  margin: 6px 0 10px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.about-hq-address {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.about-hq-meta {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-hq-meta li {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 2px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: start;
+}
+
+.about-hq-meta span {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.3px;
+  text-align: start;
+}
+
+.about-hq-meta a,
+.about-hq-meta strong {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: start;
+}
+
+.about-hq-meta a[dir="ltr"] {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: match-parent;
+}
+
+html[dir="rtl"] .about-hq-meta a[dir="ltr"] {
+  text-align: right;
+}
+
+html:not([dir="rtl"]) .about-hq-meta a[dir="ltr"] {
+  text-align: left;
+}
+
+.about-hq-meta a:hover {
+  color: #7dd3e8;
+}
+
+.about-hq-card .static-btn-ghost {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+
+.about-hq-card .static-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 1100px) {
+  .about-offer-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .about-offer-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-offer-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Auth pages: quiet alignment (same sequence as other static pages) ---- */
+.static-page--narrow {
+  max-width: 480px;
+}
+
+.static-page--narrow .static-page-header {
+  text-align: center;
+}
+
+.static-page--narrow .static-page-header .static-kicker {
+  margin-inline: auto;
+}
+
+.static-page--narrow .static-page-header .static-lead {
+  margin-inline: auto;
+  max-width: 36em;
+}
+
+.static-auth-panel {
+  background: #FFF7EF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 28px 24px;
+  box-shadow: none;
+}
+
+.static-auth-panel > .auth-notice {
+  margin: 0 0 16px;
+  animation: auth-notice-in 0.38s ease-out;
+}
+
+@keyframes auth-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .static-auth-panel > .auth-notice {
+    animation: none;
+  }
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 2px 0 14px;
+}
+
+.static-text-link {
+  color: var(--color-brand, #1897B8);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.static-text-link:hover {
+  text-decoration: underline;
+}
+
+.auth-social {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(38, 42, 51, 0.18);
+  background: transparent;
+  color: #262A33;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.auth-social-btn:hover {
+  border-color: var(--color-brand, #1897B8);
+  color: var(--color-brand, #1897B8);
+  background: transparent;
+}
+
+a.auth-social-btn,
+a.auth-social-btn--link {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.auth-social-btn svg {
+  flex-shrink: 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.auth-submit {
+  width: 100%;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.static-auth-panel .static-form-actions {
+  margin-top: 4px;
+}
+
+.static-auth-panel .static-form-note {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.static-plan-cards {
+  gap: 8px;
+}
+
+.static-plan-option .plan-body {
+  background: transparent;
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.static-plan-option input:checked + .plan-body {
+  border-color: var(--ink-black, #262A33);
+  box-shadow: none;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.static-check input {
+  accent-color: var(--ink-black, #262A33);
+}
+
+/* ---- Advertise request + why sidebar (equal height, site bg) ---- */
+.ad-request-panel,
+.ad-why-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-salmon-light, #F2DFCE);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.ad-request-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink-black);
+  line-height: 1.35;
+}
+
+.ad-request-lead {
+  margin: 0 0 18px;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink-secondary);
+}
+
+.ad-request-panel .static-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ad-request-panel .static-field input,
+.ad-request-panel .static-field textarea,
+.ad-request-panel .static-field select {
+  background: var(--bg-salmon);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.ad-request-panel .static-form-actions {
+  margin-top: auto;
+  padding-top: 8px;
+  justify-content: center;
+}
+
+.ad-why-panel {
+  padding: 24px 22px;
+}
+
+.ad-why-top {
+  flex: 1;
+}
+
+.ad-why-formats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ad-why-format {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-salmon, #FFF1E5);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+}
+
+.ad-why-mock {
+  width: 72px;
+  height: 54px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.35);
+  padding: 6px;
+  box-sizing: border-box;
+  display: flex;
+}
+
+.ad-why-mock--leader {
+  flex-direction: column;
+}
+
+.ad-why-mock--medium {
+  flex-direction: row-reverse;
+  align-items: flex-start;
+}
+
+.ad-why-mock-slot {
+  display: block;
+  background: var(--color-brand, #1897B8);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.ad-why-mock--leader .ad-why-mock-slot {
+  width: 100%;
+  height: 10px;
+}
+
+.ad-why-mock--medium .ad-why-mock-slot {
+  width: 38%;
+  height: 24px;
+  min-height: 0;
+}
+
+.ad-why-format-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ad-why-format-body strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-black);
+}
+
+.ad-why-format-body em {
+  font-style: normal;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-muted, #64748b);
+}
+
+.ad-why-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-brand, #1897B8);
+  margin-top: 2px;
+}
+
+.ad-why-format-body p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+
+.ad-why-foot {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 6px;
+  text-align: start;
+}
+
+.ad-why-foot-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted, #64748b);
+  text-align: start;
+}
+
+.ad-why-phone {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-brand, #1897B8);
+  text-decoration: none;
+  text-align: start;
+}
+
+.ad-why-phone[dir="ltr"] {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: match-parent;
+}
+
+html[dir="rtl"] .ad-why-phone[dir="ltr"] {
+  text-align: right;
+}
+
+html:not([dir="rtl"]) .ad-why-phone[dir="ltr"] {
+  text-align: left;
+}
+
+.ad-why-phone:hover {
+  text-decoration: underline;
+}
+
+.ad-why-foot .static-text-link {
+  font-size: 13px;
+  word-break: break-all;
+  text-align: start;
+}
+
+.ad-why-foot .static-text-link[dir="ltr"] {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: match-parent;
+}
+
+html[dir="rtl"] .ad-why-foot .static-text-link[dir="ltr"] {
+  text-align: right;
+}
+
+html:not([dir="rtl"]) .ad-why-foot .static-text-link[dir="ltr"] {
+  text-align: left;
+}
+
+/* Quform shortcodes: match native .static-form field/row layout.
+   Parent stacks rows; each .quform-2-columns row is a true 2-up pair.
+   Late footer CSS in helpers.php beats Quform #id theme rules. */
+.static-form.static-form--shortcode,
+.ad-request-panel .static-form.static-form--shortcode,
+.contact-shortcode-panel.static-form--shortcode {
+  display: flow-root;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  isolation: isolate;
+  box-sizing: border-box;
+}
+
+.static-form--shortcode .quform,
+.static-form--shortcode .quform-form,
+.static-form--shortcode .quform-form-inner,
+.static-form--shortcode .quform-element-page,
+.static-form--shortcode .quform-page,
+.static-form--shortcode form {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+}
+
+.static-form--shortcode .quform-element-honeypot,
+.static-form--shortcode .quform-element-tree,
+.static-form--shortcode .quform-hidden,
+.static-form--shortcode .quform-edit-form,
+.static-form--shortcode .quform-description:empty,
+.static-form--shortcode .quform-error-wrap:empty {
+  display: none !important;
+}
+
+/*
+ * Parent stacks Quform rows vertically.
+ * Nested 2-col on BOTH parent and row was the "grid of 4" bug.
+ */
+.static-form--shortcode .quform-elements,
+.static-form--shortcode .quform-child-elements {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Flat forms (no Quform column-rows): 2-up like native .static-form-row */
+.static-form--shortcode .quform-child-elements:not(:has(> .quform-element-row)):not(:has(> .quform-element-group)) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+.static-form--shortcode .quform-child-elements:not(:has(> .quform-element-row)) > .quform-element-textarea,
+.static-form--shortcode .quform-child-elements:not(:has(> .quform-element-row)) > .quform-element-select,
+.static-form--shortcode .quform-child-elements:not(:has(> .quform-element-row)) > .quform-element-captcha,
+.static-form--shortcode .quform-child-elements:not(:has(> .quform-element-row)) > .quform-element-file,
+.static-form--shortcode .quform-child-elements:not(:has(> .quform-element-row)) > .quform-element-submit,
+.static-form--shortcode .quform-child-elements:not(:has(> .quform-element-row)) > .quform-element-html {
+  grid-column: 1 / -1 !important;
+}
+
+.static-form--shortcode .quform-element,
+.static-form--shortcode .quform-element-column,
+.static-form--shortcode .quform-spacer,
+.static-form--shortcode .quform-inner,
+.static-form--shortcode .quform-input,
+.static-form--shortcode [class*="quform-column-"],
+.static-form--shortcode [class*="quform-size-"] {
+  float: none !important;
+  clear: none !important;
+  position: static !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Each Quform 2-column row = two equal fields, full form width (same edges as select/email).
+   #altijara-qf beats Quform #form-id width/float rules. */
+#altijara-qf.static-form--shortcode .quform-child-elements > .quform-element-row,
+#altijara-qf.static-form--shortcode .quform-child-elements > .quform-element-group,
+#altijara-qf.static-form--shortcode .quform-element-row.quform-2-columns,
+#altijara-qf.static-form--shortcode .quform-element-row.quform-3-columns,
+#altijara-qf.static-form--shortcode .quform-element-row[class*="quform-2-columns"],
+#altijara-qf.static-form--shortcode .quform-element-row[class*="quform-3-columns"],
+#altijara-qf.static-form--shortcode .quform-element-group[class*="quform-2-columns"],
+#altijara-qf.static-form--shortcode .quform-element-group[class*="quform-3-columns"],
+.static-form--shortcode .quform-child-elements > .quform-element-row,
+.static-form--shortcode .quform-child-elements > .quform-element-group,
+.static-form--shortcode .quform-element-row.quform-2-columns,
+.static-form--shortcode .quform-element-row.quform-3-columns,
+.static-form--shortcode .quform-element-row[class*="quform-2-columns"],
+.static-form--shortcode .quform-element-row[class*="quform-3-columns"],
+.static-form--shortcode .quform-element-group[class*="quform-2-columns"],
+.static-form--shortcode .quform-element-group[class*="quform-3-columns"] {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  gap: 10px !important;
+  float: none !important;
+  clear: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column,
+#altijara-qf.static-form--shortcode .quform-element-group > .quform-element-column,
+#altijara-qf.static-form--shortcode .quform-element-row > [class*="quform-column-"],
+#altijara-qf.static-form--shortcode .quform-element-row > [class*="quform-size-"],
+.static-form--shortcode .quform-element-row > .quform-element-column,
+.static-form--shortcode .quform-element-group > .quform-element-column,
+.static-form--shortcode .quform-element-row[class*="quform-2-columns"] > .quform-element-column,
+.static-form--shortcode .quform-element-row[class*="quform-3-columns"] > .quform-element-column {
+  display: block !important;
+  flex: 1 1 0 !important;
+  flex-grow: 1 !important;
+  flex-shrink: 1 !important;
+  flex-basis: 0 !important;
+  float: none !important;
+  clear: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 2-up fields: fill column so outer edges match full-width rows below */
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column .quform-element,
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column .quform-spacer,
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column .quform-inner,
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column .quform-input,
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column [class*="quform-size-"],
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column [class*="quform-field-width"],
+.static-form--shortcode .quform-element-row > .quform-element-column .quform-element,
+.static-form--shortcode .quform-element-row > .quform-element-column .quform-spacer,
+.static-form--shortcode .quform-element-row > .quform-element-column .quform-inner,
+.static-form--shortcode .quform-element-row > .quform-element-column .quform-input,
+.static-form--shortcode .quform-element-row > .quform-element-column [class*="quform-size-"],
+.static-form--shortcode .quform-element-row > .quform-element-column [class*="quform-field-width"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-inline: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-inline: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column .quform-field,
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column input,
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column select,
+#altijara-qf.static-form--shortcode .quform-element-row > .quform-element-column textarea,
+.static-form--shortcode .quform-element-row > .quform-element-column .quform-field,
+.static-form--shortcode .quform-element-row > .quform-element-column input,
+.static-form--shortcode .quform-element-row > .quform-element-column select,
+.static-form--shortcode .quform-element-row > .quform-element-column textarea {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-inline: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.static-form--shortcode .quform-element-row > :only-child,
+.static-form--shortcode .quform-element-group > :only-child {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Full-width field blocks (select, etc.) sit under the 2-up rows */
+.static-form--shortcode .quform-child-elements > .quform-element-select,
+.static-form--shortcode .quform-child-elements > .quform-element-textarea,
+.static-form--shortcode .quform-child-elements > .quform-element-captcha,
+.static-form--shortcode .quform-child-elements > .quform-element-file {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+.static-form--shortcode .quform-element-text,
+.static-form--shortcode .quform-element-email,
+.static-form--shortcode .quform-element-select,
+.static-form--shortcode .quform-element-textarea,
+.static-form--shortcode .quform-element-captcha,
+.static-form--shortcode .quform-element-phone,
+.static-form--shortcode .quform-element-name,
+.static-form--shortcode .quform-element-password {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.static-form--shortcode .quform-spacer {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Kill Quform theme margins that stack with flex gap */
+.static-form--shortcode .quform-element,
+.static-form--shortcode .quform-element-row,
+.static-form--shortcode .quform-element-group,
+.static-form--shortcode .quform-element-column,
+.static-form--shortcode .quform-error-wrap,
+.static-form--shortcode .quform-description {
+  margin: 0 !important;
+}
+
+.static-form--shortcode .quform-error-wrap:empty,
+.static-form--shortcode .quform-description:empty {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.static-form--shortcode .quform-inner,
+.static-form--shortcode .quform-input:not(.quform-input-radio):not(.quform-input-checkbox):not(.quform-input-file):not(.quform-input-captcha):not(.quform-input-recaptcha) {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.static-form--shortcode .quform-label,
+.static-form--shortcode .quform-label-text,
+#altijara-qf.static-form--shortcode .quform-label,
+#altijara-qf.static-form--shortcode .quform-label-text {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 0 5px !important;
+  padding: 0 !important;
+  text-align: start !important;
+  font-family: var(--font-main) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  color: var(--ink-black) !important;
+}
+
+.static-form--shortcode .quform-required {
+  color: #c0392b !important;
+  margin-inline-start: 2px;
+}
+
+.static-form--shortcode input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([type="file"]):not([type="image"]),
+.static-form--shortcode textarea,
+.static-form--shortcode select,
+.static-form--shortcode .quform-field:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  display: block !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  height: auto !important;
+  min-height: 44px !important;
+  padding: 11px 12px !important;
+  border: 1px solid rgba(0, 0, 0, 0.14) !important;
+  border-radius: 4px !important;
+  background: var(--bg-salmon) !important;
+  color: var(--ink-black) !important;
+  font-family: var(--font-main) !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  box-shadow: none !important;
+  appearance: auto;
+}
+
+.static-form--shortcode select,
+.static-form--shortcode select.quform-field {
+  text-align: start !important;
+  padding-inline-end: 32px !important;
+}
+
+.static-form--shortcode textarea,
+.static-form--shortcode textarea.quform-field {
+  min-height: 120px !important;
+  resize: vertical;
+}
+
+.ad-request-panel .static-form--shortcode input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([type="file"]):not([type="image"]),
+.ad-request-panel .static-form--shortcode textarea,
+.ad-request-panel .static-form--shortcode select {
+  background: var(--bg-salmon) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.static-form--shortcode input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([type="file"]):focus,
+.static-form--shortcode textarea:focus,
+.static-form--shortcode select:focus {
+  border-color: var(--color-brand, #1897B8) !important;
+  box-shadow: 0 0 0 3px rgba(24, 151, 184, 0.12) !important;
+  outline: none !important;
+}
+
+/* Action row: Send + secondary link grouped (beat #altijara-qf equal-column rules) */
+#altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-submit),
+#altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-html .static-btn),
+#altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-html a),
+#altijara-qf.static-form--shortcode [class*="quform-2-columns"]:has(.quform-element-submit),
+#altijara-qf.static-form--shortcode [class*="quform-2-columns"]:has(.quform-element-html a),
+.static-form--shortcode .quform-element-row:has(.quform-element-submit),
+.static-form--shortcode .quform-element-row:has(.quform-element-html .static-btn),
+.static-form--shortcode .quform-element-row:has(.quform-element-html a),
+.static-form--shortcode [class*="quform-2-columns"]:has(.quform-element-submit),
+.static-form--shortcode [class*="quform-2-columns"]:has(.quform-element-html a) {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+}
+
+#altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-submit) > .quform-element-column,
+#altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-html .static-btn) > .quform-element-column,
+#altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-html a) > .quform-element-column,
+#altijara-qf.static-form--shortcode [class*="quform-2-columns"]:has(.quform-element-submit) > .quform-element-column,
+#altijara-qf.static-form--shortcode [class*="quform-2-columns"]:has(.quform-element-html a) > .quform-element-column,
+.static-form--shortcode .quform-element-row:has(.quform-element-submit) > .quform-element-column,
+.static-form--shortcode .quform-element-row:has(.quform-element-html .static-btn) > .quform-element-column,
+.static-form--shortcode .quform-element-row:has(.quform-element-html a) > .quform-element-column {
+  flex: 0 0 auto !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: auto !important;
+  width: auto !important;
+  max-width: max-content !important;
+  min-width: 0 !important;
+  text-align: start !important;
+}
+
+.static-form--shortcode .quform-element-submit,
+.static-form--shortcode .quform-element-html,
+.static-form--shortcode .quform-submit-inner,
+.static-form--shortcode .quform-button-submit,
+.static-form--shortcode .quform-buttons {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  float: none !important;
+  clear: none !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: start !important;
+}
+
+.static-form--shortcode .quform-element-html .quform-spacer {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  width: auto !important;
+}
+
+.static-form--shortcode .quform-element-submit button,
+.static-form--shortcode .quform-element-submit input[type="submit"],
+.static-form--shortcode .quform-submit,
+.static-form--shortcode .quform-submit-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 12px 22px !important;
+  border: 1.5px solid transparent !important;
+  border-radius: 4px !important;
+  background: var(--color-brand, #1897B8) !important;
+  color: #ffffff !important;
+  font-family: var(--font-main) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  float: none !important;
+}
+
+.static-form--shortcode .quform-element-html a.static-btn,
+.static-form--shortcode .quform-element-html a:not(.static-btn),
+.static-form--shortcode .quform-element-html button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 12px 22px !important;
+  border: 1.5px solid var(--ink-black, #262A33) !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  color: var(--ink-black, #262A33) !important;
+  font-family: var(--font-main) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  float: none !important;
+}
+
+.static-form--shortcode .quform-element-html a.static-btn-ghost {
+  border-color: var(--ink-black, #262A33) !important;
+  background: transparent !important;
+  color: var(--ink-black, #262A33) !important;
+}
+
+.static-form--shortcode .quform-element-submit button span,
+.static-form--shortcode .quform-element-submit button em,
+.static-form--shortcode .quform-submit span,
+.static-form--shortcode .quform-submit em,
+.static-form--shortcode .quform-submit-button span,
+.static-form--shortcode .quform-submit-button em,
+.static-form--shortcode .quform-element-html a span,
+.static-form--shortcode .quform-element-html button span {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-style: normal !important;
+}
+
+.static-form--shortcode .quform-element-submit button:hover,
+.static-form--shortcode .quform-element-submit input[type="submit"]:hover,
+.static-form--shortcode .quform-submit:hover,
+.static-form--shortcode .quform-submit-button:hover {
+  background: #12748e !important;
+  color: #ffffff !important;
+}
+
+.static-form--shortcode .quform-element-html a:hover,
+.static-form--shortcode .quform-element-html button:hover {
+  background: var(--ink-black, #262A33) !important;
+  color: #ffffff !important;
+  border-color: var(--ink-black, #262A33) !important;
+}
+
+@media (max-width: 768px) {
+  .static-form--shortcode .quform-child-elements:not(:has(> .quform-element-row)):not(:has(> .quform-element-group)) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .static-form--shortcode .quform-child-elements > .quform-element-row,
+  .static-form--shortcode .quform-child-elements > .quform-element-group,
+  .static-form--shortcode .quform-element-row.quform-2-columns,
+  .static-form--shortcode .quform-element-row.quform-3-columns,
+  .static-form--shortcode .quform-element-row[class*="quform-2-columns"],
+  .static-form--shortcode .quform-element-row[class*="quform-3-columns"] {
+    flex-direction: column !important;
+  }
+
+  #altijara-qf.static-form--shortcode .quform-element-row:not(:has(.quform-element-submit)):not(:has(.quform-element-html a)) > .quform-element-column,
+  #altijara-qf.static-form--shortcode .quform-element-group > .quform-element-column,
+  .static-form--shortcode .quform-element-row:not(:has(.quform-element-submit)):not(:has(.quform-element-html a)) > .quform-element-column,
+  .static-form--shortcode .quform-element-group > .quform-element-column {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-submit),
+  #altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-html a),
+  .static-form--shortcode .quform-element-row:has(.quform-element-submit),
+  .static-form--shortcode .quform-element-row:has(.quform-element-html a) {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  #altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-submit) > .quform-element-column,
+  #altijara-qf.static-form--shortcode .quform-element-row:has(.quform-element-html a) > .quform-element-column,
+  .static-form--shortcode .quform-element-row:has(.quform-element-submit) > .quform-element-column,
+  .static-form--shortcode .quform-element-row:has(.quform-element-html a) > .quform-element-column {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: max-content !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .static-form--shortcode .quform-element-row:has(.quform-element-submit),
+  .static-form--shortcode .quform-element-row:has(.quform-element-html a),
+  .static-form--shortcode [class*="quform-2-columns"]:has(.quform-element-submit),
+  .static-form--shortcode [class*="quform-2-columns"]:has(.quform-element-html a) {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .static-form--shortcode .quform-element-submit button,
+  .static-form--shortcode .quform-element-submit input[type="submit"],
+  .static-form--shortcode .quform-submit,
+  .static-form--shortcode .quform-submit-button,
+  .static-form--shortcode .quform-element-html a,
+  .static-form--shortcode .quform-element-html button {
+    width: auto !important;
+    max-width: 100% !important;
+    padding: 11px 14px !important;
+    white-space: nowrap !important;
+  }
+
+  .static-form-actions,
+  .ad-request-panel .static-form-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .static-form-actions .static-btn {
+    flex: 0 1 auto;
+    width: auto;
+    padding-inline: 14px;
+    white-space: nowrap;
+  }
+}
+
+

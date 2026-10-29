@@ -1,0 +1,236 @@
+/* Theme Options → Emails builder */
+
+.altijara-mail-builder {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+	gap: 20px;
+	align-items: start;
+}
+
+.altijara-mail-builder__editor {
+	min-width: 0;
+}
+
+.altijara-mail-builder__preview {
+	position: sticky;
+	top: 48px;
+	min-width: 0;
+}
+
+.altijara-mail-builder__templates {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0 0 14px;
+}
+
+.altijara-mail-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 10px 14px;
+	border: 1px solid #dcdcde;
+	border-radius: 10px;
+	background: #fff;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.altijara-mail-tab .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	color: #646970;
+}
+
+.altijara-mail-tab:hover {
+	border-color: #1897b8;
+	color: #0a4b5c;
+}
+
+.altijara-mail-tab.is-active {
+	border-color: #1897b8;
+	background: #eef8fb;
+	box-shadow: 0 0 0 1px #1897b8 inset;
+	color: #0a4b5c;
+}
+
+.altijara-mail-tab.is-active .dashicons {
+	color: #1897b8;
+}
+
+.altijara-mail-pane[hidden] {
+	display: none !important;
+}
+
+.altijara-mail-toggle {
+	display: inline-flex;
+	align-items: flex-start;
+	gap: 8px;
+	line-height: 1.45;
+}
+
+.altijara-mail-builder__submit {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+}
+
+.altijara-mail-builder__submit .description {
+	margin: 0;
+}
+
+.altijara-mail-preview-card {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 14px;
+	overflow: hidden;
+	box-shadow: 0 8px 24px rgba(15, 19, 24, 0.06);
+}
+
+.altijara-mail-preview-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px;
+	background: #fff;
+	border-bottom: 1px solid #e2e4e7;
+}
+
+.altijara-mail-preview-toolbar__title {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-inline-end: auto;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.altijara-mail-preview-toolbar__title .dashicons {
+	color: #1897b8;
+}
+
+.altijara-mail-device {
+	display: inline-flex;
+	padding: 2px;
+	border-radius: 8px;
+	background: #f0f0f1;
+}
+
+.altijara-mail-device__btn {
+	margin: 0;
+	padding: 5px 10px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #50575e;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.altijara-mail-device__btn.is-active {
+	background: #fff;
+	color: #1d2327;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.altijara-mail-preview-status {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: #646970;
+}
+
+.altijara-mail-preview-status[data-state="updating"] {
+	color: #1897b8;
+}
+
+.altijara-mail-preview-status[data-state="error"] {
+	color: #b32d2e;
+}
+
+.altijara-mail-preview-subject {
+	display: grid;
+	gap: 2px;
+	padding: 10px 14px;
+	background: #fff;
+	border-bottom: 1px solid #e2e4e7;
+}
+
+.altijara-mail-preview-subject span {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #8c8f94;
+}
+
+.altijara-mail-preview-subject strong {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+	line-height: 1.4;
+	word-break: break-word;
+}
+
+.altijara-mail-preview-frame {
+	padding: 16px;
+	background:
+		linear-gradient(45deg, #ececec 25%, transparent 25%) 0 0 / 16px 16px,
+		linear-gradient(-45deg, #ececec 25%, transparent 25%) 0 8px / 16px 16px,
+		linear-gradient(45deg, transparent 75%, #ececec 75%) 8px -8px / 16px 16px,
+		linear-gradient(-45deg, transparent 75%, #ececec 75%) -8px 0 / 16px 16px,
+		#f3f3f3;
+	transition: padding 0.2s ease;
+}
+
+.altijara-mail-preview-frame[data-mail-device-frame="mobile"] {
+	padding: 16px 28px;
+}
+
+.altijara-mail-preview-iframe {
+	display: block;
+	width: 100%;
+	height: 560px;
+	margin: 0 auto;
+	border: 0;
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 10px 30px rgba(38, 42, 51, 0.12);
+	transition: max-width 0.2s ease, height 0.2s ease;
+}
+
+.altijara-mail-preview-frame[data-mail-device-frame="mobile"] .altijara-mail-preview-iframe {
+	max-width: 360px;
+	height: 620px;
+}
+
+@media (max-width: 1280px) {
+	.altijara-mail-builder {
+		grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+	}
+}
+
+@media (max-width: 1100px) {
+	.altijara-mail-builder {
+		grid-template-columns: 1fr;
+	}
+
+	.altijara-mail-builder__preview {
+		position: static;
+		order: -1;
+	}
+
+	.altijara-mail-preview-iframe {
+		height: 420px;
+	}
+}

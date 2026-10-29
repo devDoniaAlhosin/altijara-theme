@@ -1,0 +1,139 @@
+/* Altijara — dark WordPress admin chrome */
+
+:root {
+	--altijara-admin-ink: #0f1318;
+	--altijara-admin-ink-mid: #161b22;
+	--altijara-admin-ink-hover: #232a35;
+	--altijara-admin-accent: #1897b8;
+	--altijara-admin-text: #e8ecef;
+	--altijara-admin-muted: #9aa5b1;
+}
+
+/* —— Admin bar —— */
+#wpadminbar {
+	background: var(--altijara-admin-ink) !important;
+}
+
+#wpadminbar .ab-item,
+#wpadminbar a.ab-item,
+#wpadminbar > #wp-toolbar span.ab-label,
+#wpadminbar > #wp-toolbar span.noticon {
+	color: var(--altijara-admin-text) !important;
+}
+
+#wpadminbar .ab-icon,
+#wpadminbar .ab-icon::before,
+#wpadminbar .ab-item::before,
+#wpadminbar #adminbarsearch::before {
+	color: var(--altijara-admin-muted) !important;
+}
+
+#wpadminbar .ab-top-menu > li:hover > .ab-item,
+#wpadminbar .ab-top-menu > li.hover > .ab-item,
+#wpadminbar .ab-top-menu > li > .ab-item:focus,
+#wpadminbar.nojq .quicklinks .ab-top-menu > li > .ab-item:focus {
+	background: var(--altijara-admin-ink-mid) !important;
+	color: #fff !important;
+}
+
+#wpadminbar .menupop .ab-sub-wrapper,
+#wpadminbar .shortlink-input {
+	background: var(--altijara-admin-ink-mid) !important;
+}
+
+#wpadminbar .ab-submenu .ab-item,
+#wpadminbar .quicklinks .menupop ul li a {
+	color: var(--altijara-admin-text) !important;
+}
+
+#wpadminbar .quicklinks .menupop ul li a:hover,
+#wpadminbar .quicklinks .menupop ul li a:focus {
+	background: var(--altijara-admin-ink-hover) !important;
+	color: #fff !important;
+}
+
+/* —— Sidebar colors only (width stays WordPress default 160px) —— */
+#adminmenuback,
+#adminmenuwrap,
+#adminmenu {
+	background: var(--altijara-admin-ink) !important;
+}
+
+#adminmenu a {
+	color: var(--altijara-admin-text) !important;
+}
+
+#adminmenu div.wp-menu-image::before {
+	color: var(--altijara-admin-muted) !important;
+}
+
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub > a.menu-top,
+#adminmenu li > a.menu-top:focus {
+	background: var(--altijara-admin-ink-hover) !important;
+	color: #fff !important;
+}
+
+#adminmenu li.menu-top:hover div.wp-menu-image::before,
+#adminmenu li.opensub > a.menu-top div.wp-menu-image::before {
+	color: #fff !important;
+}
+
+#adminmenu li.wp-has-current-submenu a.wp-has-current-submenu,
+#adminmenu li.current a.menu-top,
+#adminmenu .wp-submenu .wp-submenu-head,
+#adminmenu .wp-has-current-submenu .wp-submenu .wp-submenu-head {
+	background: var(--altijara-admin-ink-mid) !important;
+	color: #fff !important;
+	border-left: 3px solid var(--altijara-admin-accent);
+}
+
+#adminmenu .wp-submenu,
+#adminmenu .wp-has-current-submenu .wp-submenu,
+#adminmenu .wp-has-current-submenu.opensub .wp-submenu,
+.folded #adminmenu .wp-has-current-submenu .wp-submenu {
+	background: var(--altijara-admin-ink-mid) !important;
+}
+
+#adminmenu .wp-submenu a {
+	color: var(--altijara-admin-muted) !important;
+}
+
+#adminmenu .wp-submenu a:hover,
+#adminmenu .wp-submenu a:focus,
+#adminmenu .wp-submenu li.current a,
+#adminmenu .wp-submenu li.current a:hover {
+	color: #fff !important;
+	background: transparent !important;
+}
+
+#adminmenu .wp-submenu li.current a {
+	color: var(--altijara-admin-accent) !important;
+}
+
+#adminmenu li.wp-menu-separator {
+	margin: 4px 0;
+}
+
+#adminmenu .wp-submenu-head,
+#adminmenu a.menu-top {
+	border-left: 3px solid transparent;
+}
+
+#collapse-menu {
+	color: var(--altijara-admin-muted) !important;
+}
+
+#collapse-button .collapse-button-icon::after,
+#collapse-button .collapse-button-label {
+	color: var(--altijara-admin-muted) !important;
+}
+
+#collapse-button:hover {
+	color: #fff !important;
+}
+
+#collapse-button:hover .collapse-button-icon::after,
+#collapse-button:hover .collapse-button-label {
+	color: #fff !important;
+}
